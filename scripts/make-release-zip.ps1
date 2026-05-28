@@ -21,7 +21,8 @@ $Include = @(
     "run.bat",
     "_internal",
     "app",
-    ".cursor"
+    ".cursor",
+    "static"
 )
 
 # README 文件名含中文，单独复制

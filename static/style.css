@@ -1,0 +1,17 @@
+html,
+body {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+#log::-webkit-scrollbar {
+  width: 10px;
+}
+
+#log::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+#log::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #334155;
+}
