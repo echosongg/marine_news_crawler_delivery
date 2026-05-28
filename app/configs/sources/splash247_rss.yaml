@@ -1,0 +1,170 @@
+source:
+  name: splash247_rss
+  url: https://splash247.com
+  type: rss
+  strategy: rss
+  status: enable
+
+# ─── 为什么用 RSS 而不是 HTML ──────────────────────────────────────────────────
+#
+# Splash247 所有分类归档页（/category/...）文章列表均由 JavaScript 动态渲染，
+# httpx 只能拿到初始 HTML shell，页面里没有任何 article / li.post-item 元素。
+# 实测诊断（debug_splash247.py，2026-04-21）：
+#   li.post-item=0，article=0，article.post=0
+#
+# WordPress 为每个分类自动生成 RSS 2.0 Feed，均已验证 200 OK：
+#   SplashTech → https://splash247.com/category/splashtech/feed/
+#   Offshore   → https://splash247.com/category/sector/offshore/feed/
+#
+# 当前涵盖分类（均已验证 RSS 可用）：
+#   SplashTech    → /category/splashtech/feed/
+#   Offshore      → /category/sector/offshore/feed/
+#   Renewables    → /category/sector/renewables/feed/
+#   Contributions → /category/contributions/feed/（原 Features，/category/features/ 为 404）
+#
+# RSSConnector 遍历所有 sections，每个 section 用自己的 url 拉对应 RSS Feed。
+# ─────────────────────────────────────────────────────────────────────────────
+
+request:
+  timeout: 25
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: application/rss+xml, application/xml;q=0.9, */*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+    Referer: https://splash247.com/
+
+list_page:
+  # list_page.url 作为所有 section 的兜底 URL（各 section 均配置了自己的 url，此处不会被用到）
+  url: https://splash247.com/feed/
+
+  # RSSConnector 用 XML 标签名作为 selector（非 CSS selector）：
+  #   item_selector → RSS <item> 元素
+  #   link_selector  → <item> 内的 <link> 文本节点（文章 URL）
+  #   title_selector → <item> 内的 <title> 文本节点
+  #   date_selector  → <item> 内的 <pubDate> 文本节点（日期最终取自 HTML 详情页）
+  sections:
+
+    # ── 1. SplashTech Latest ───────────────────────────────────────────────────
+    - name: splashtech
+      section_title: "SplashTech Latest"
+      url: https://splash247.com/category/splashtech/feed/
+      item_selector: item
+      link_selector: link
+      title_selector: title
+      date_selector: pubDate
+      tags:
+        - type: section
+          name: splashtech
+
+    # ── 2. Offshore ────────────────────────────────────────────────────────────
+    - name: offshore
+      section_title: "Offshore"
+      url: https://splash247.com/category/sector/offshore/feed/
+      item_selector: item
+      link_selector: link
+      title_selector: title
+      date_selector: pubDate
+      tags:
+        - type: section
+          name: offshore
+        - type: term
+          name: offshore
+
+    # ── 3. Renewables ──────────────────────────────────────────────────────────
+    - name: renewables
+      section_title: "Renewables"
+      url: https://splash247.com/category/sector/renewables/feed/
+      item_selector: item
+      link_selector: link
+      title_selector: title
+      date_selector: pubDate
+      tags:
+        - type: section
+          name: renewables
+        - type: term
+          name: renewables
+
+    # ── 4. Contributions（原 Features）─────────────────────────────────────────
+    # 原配置 /category/features/ 返回 404，正确路径为 /category/contributions/
+    # RSS Feed：https://splash247.com/category/contributions/feed/
+    # 对应 HTML 分类归档页 /category/contributions/ → 同为 JS 渲染
+    - name: contributions
+      section_title: "Features & Contributions"
+      url: https://splash247.com/category/contributions/feed/
+      item_selector: item
+      link_selector: link
+      title_selector: title
+      date_selector: pubDate
+      tags:
+        - type: section
+          name: contributions
+
+# ─── 详情页（HTML）──────────────────────────────────────────────────────────
+# RSSConnector 从 RSS <link> 拿到文章 URL 后，会请求该 HTML 页面提取正文。
+# 文章页结构与 splash247.yaml 一致，复用相同 selector。
+#
+# 日期说明：
+#   date 来自 HTML 详情页 .single-post-meta .date，格式为 "April 21, 2026"（WordPress 本地化）
+#   而非 RSS pubDate 的 RFC 2822 格式，parse.date_format 须与此对应。
+detail_page:
+  title_selector: "h1.post-title, h1.the-subtitle, h1.entry-title, h1"
+  content_selector: ".entry-content, .post-content"
+  date_selector: ".single-post-meta .date, .entry-meta time, time[datetime]"
+  remove_selectors:
+    - ".mailmunch-forms-before-post"
+    - ".mailmunch-forms-in-post-middle"
+    - ".mailmunch-forms-after-post"
+    - ".related-posts"
+    - ".yarpp-related"
+    - ".social-share"
+    - ".sharedaddy"
+    - ".sd-block"
+    - ".post-tags"
+    - ".entry-footer"
+    - ".author-bio"
+    - "#comments"
+    - ".comment-respond"
+    - ".post-navigation"
+    - ".nav-links"
+    - ".advertisement"
+    - ".ad-unit"
+    - "script"
+    - "style"
+    - "noscript"
+
+parse:
+  date_format: "%B %d, %Y"
+  timezone: UTC
+  # splashtech 10 + offshore 10 + renewables 10 + contributions 10 = 最多 40 篇/次
+  max_articles_per_run: 40
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 20
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

@@ -1,0 +1,141 @@
+# ============================================================
+# seatrade-maritime.com — Seatrade Maritime News (Latest News)
+# https://www.seatrade-maritime.com
+#
+# Seatrade Maritime 是全球领先的航运与海事行业新闻平台，总部位于英国，
+# 涵盖集装箱、油轮、干散货、港口物流、合规监管、海事安全等各类新闻。
+#
+# 反爬说明：
+#   www.seatrade-maritime.com 主 HTML 页面受 Cloudflare 保护（403），
+#   但 RSS 源 /rss.xml 无限制（直接可访问，返回 200 XML）。
+#   文章详情页同样受 Cloudflare 保护，需借助 Playwright 无头浏览器访问。
+#
+# 策略：
+#   strategy: rss — 用 /rss.xml 作为列表页（发现最新 50 篇文章），
+#   绕过 Cloudflare 对 HTML 列表页的 403 封锁；
+#   request.use_playwright: true — 详情页通过 Playwright 抓取以绕过 Cloudflare。
+#
+# RSS 结构（/rss.xml）：
+#   <item>
+#     <title>Article Title</title>
+#     <link>https://www.seatrade-maritime.com/{section}/{slug}</link>
+#     <description>One-sentence teaser text</description>
+#     <pubDate>Thu, 23 Apr 2026 01:46:26 GMT</pubDate>
+#     <dc:creator>Author Name</dc:creator>
+#     <guid>...</guid>
+#     <media:thumbnail url="..."/>
+#   </item>
+#
+#   RSS 不支持按分类过滤（query 参数 ?section= 无效，始终返回全量 50 条）。
+#   /rss.xml 所含文章涵盖所有 section：
+#   containers, security, tankers, dry-bulk, maritime-technology,
+#   ports-logistics, crewing, bunkering, sustainability, lng 等。
+#   Strait of Hormuz 相关文章（安全/集装箱/油轮类）均包含在内。
+#
+# 详情页结构（Playwright 抓取）：
+#   <h1>Article Title</h1>
+#   <div class="...Date...">Apr 22, 2026</div>
+#   <div class="...Body...">
+#     Full article content (partial — paywall after ~2 paragraphs)
+#   </div>
+#
+# 注：完整正文需订阅。Playwright 抓取可获得 1–3 段公开摘要部分。
+#
+# 此配置（seatrade.yaml）涵盖：
+#   - latest_news  最新综合要闻（50 条 / 7 天时间窗）
+#
+# 分类专项配置见 seatrade_sections.yaml：
+#   - containers     集装箱航运专项（页面爬取）
+#   - strait_of_hormuz 霍尔木兹海峡危机专项（页面爬取）
+# ============================================================
+
+source:
+  name: seatrade
+  url: https://www.seatrade-maritime.com
+  type: rss
+  strategy: rss
+  status: enable
+
+request:
+  timeout: 45
+  use_playwright: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: application/rss+xml, application/xml;q=0.9, */*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  url: https://www.seatrade-maritime.com/rss.xml
+  sections:
+    # ── Latest News 最新综合要闻 ─────────────────────────────────────────────
+    # RSS /rss.xml 返回全站最新 50 篇文章，涵盖所有板块：
+    # containers, security, tankers, bunkering, maritime-technology 等。
+    - name: latest_news
+      section_title: "Latest News"
+      url: https://www.seatrade-maritime.com/rss.xml
+      item_selector: item
+      link_selector: link
+      title_selector: title
+      date_selector: pubDate
+      tags:
+        - type: section
+          name: latest_news
+
+detail_page:
+  title_selector: "h1"
+  # Keep extraction inside the article body only. ArticleBase-Body also wraps
+  # author bios, newsletter prompts, and recommendation blocks.
+  content_selector: ".ArticleBase-BodyContent, [class*='ArticleBase-BodyContent']"
+  date_selector: "main [class*='Date']"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - ".ad"
+    - ".ad-container"
+    - "[class*='advert']"
+    - "[class*='sponsor']"
+    - "[class*='subscribe']"
+    - "[class*='paywall']"
+    - "[class*='related']"
+    - ".RelatedArticle"
+    - "[class*='RelatedArticle']"
+    - ".ArticleBase-ContributorsWrapper"
+    - "[class*='ContributorsWrapper']"
+    - "[class*='YouMayAlsoLike']"
+
+parse:
+  date_format: "%B %d, %Y"
+  timezone: UTC
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 30
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

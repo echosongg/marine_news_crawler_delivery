@@ -1,0 +1,211 @@
+source:
+  name: lngindustry
+  url: https://www.lngindustry.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 20
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+# ─── 列表页说明 ───────────────────────────────────────────────────────────────
+# LNG Industry 由 Palladian Publications 运营，使用其专有 CMS。
+# 页面结构特征：
+#   - 文章列表：<article class="article"> 包裹每篇新闻
+#   - 文章标题：<h2 class="article-title"><a href="...">
+#   - 文章日期：<p class="meta"> 内，格式为 "Monday 20 April 2026 15:00"
+#
+# 文章 URL 格式：/{category-slug}/{ddmmyyyy}/{article-slug}/
+#   例：/liquid-natural-gas/02032026/collett-delivers-wind-turbines-to-dragon-lng/
+#   已知 category 包括：liquid-natural-gas / regasification / special-reports 等
+#
+# 三个目标版块：
+#   1. 主页最新新闻（主页顶部 "The latest LNG news"）
+#   2. Upcoming LNG events（直接使用 /events/ 页，已验证 200）
+#   3. More LNG news updates（直接使用 /news/ 归档页，已验证 200）
+#   4. Webinars（直接使用 /webinars/ 页，已验证 200）
+# ─────────────────────────────────────────────────────────────────────────────
+
+list_page:
+  url: https://www.lngindustry.com/
+
+  sections:
+
+    # ── 1. 主页最新新闻 ────────────────────────────────────────────────────────
+    # 来源：https://www.lngindustry.com/（主页顶部区块）
+    # 每篇文章包裹在 <article class="article"> 内
+    # 标题链接在 <h2 class="article-title"> 内
+    # 日期在 <p class="meta"> 区域，可能含 <time> 标签
+    - name: latest_news
+      section_title: "The latest LNG news"
+      item_selector: "article.article"
+      link_selector: "h2.article-title a[href]"
+      title_selector: "h2.article-title a[href]"
+      date_selector: "p.meta time, p.meta, time[datetime], .date"
+      tags:
+        - type: section
+          name: latest_news
+
+    # ── 2. Upcoming LNG events ─────────────────────────────────────────────────
+    # 来源：https://www.lngindustry.com/events/（已验证 200）
+    # 原配置使用 section_page_selector 在主页中查找 /events/ 链接再跳转，
+    # 改为直接用 url 更稳定，避免主页链接文字变化导致导航失败
+    #
+    # ⚠️ 已知限制：
+    #   Events 页面的日期为范围格式 "22 April 2026 - 22 April 2026"，
+    #   与 parse.date_format 不匹配，connector 会保留原始字符串（不影响抓取）
+    #   Events 可能没有独立详情页，detail_page 解析后正文可能较短，
+    #   min_content_length 校验可能会将其标记为 failed，属正常情况
+    - name: upcoming_events
+      section_title: "Upcoming LNG events"
+      url: https://www.lngindustry.com/events/
+      # 只选 <article> 标签，不依赖多余的 class
+      item_selector: "article"
+      # 标题链接的真实结构：<h2 class="event-title"> <a href="...">
+      link_selector: "h2.event-title a[href]"
+      title_selector: "h2.event-title span[itemprop='name']"
+      date_selector: "div.event-date"
+      tags:
+        - type: section
+          name: upcoming_events
+
+    # ── 3. Webinars ────────────────────────────────────────────────────────────
+    # 来源：https://www.lngindustry.com/webinars/（已验证 200）
+    # 结构与新闻卡片相似：<article class="article"> + <h2 class="article-title"><a>
+    # 列表页通常无可用日期，使用不存在选择器使 publish_date 回退到当前日期；
+    # 若详情页含日期则会被 detail_page.date_selector 覆盖。
+    - name: webinars
+      section_title: "Webinars"
+      url: https://www.lngindustry.com/webinars/
+      item_selector: "article.article, article.webinar, div.webinar-item"
+      link_selector: "h2.article-title a[href], h2 a[href], h3 a[href]"
+      title_selector: "h2.article-title a[href], h2 a[href], h3 a[href]"
+      date_selector: "time.nonexistent"
+      tags:
+        - type: section
+          name: webinars
+
+    # ── 4. More LNG news updates ───────────────────────────────────────────────
+    # 来源：https://www.lngindustry.com/news/（已验证 200）
+    # 原配置使用 section_page_selector 在主页中查找 /news/ 链接再跳转，
+    # 改为直接用 url 指向 /news/ 归档页，结构与主页最新新闻完全相同
+    #
+    # 说明：/news/ 页包含所有新闻，与 latest_news 存在内容重叠。
+    # HTMLConnector 内置 URL 去重，已出现在 latest_news 的文章不会被重复抓取。
+    - name: more_lng_news_updates
+      section_title: "More LNG news updates"
+      url: https://www.lngindustry.com/news/
+      item_selector: "article.article"
+      link_selector: "h2.article-title a[href]"
+      title_selector: "h2.article-title a[href]"
+      date_selector: "p.meta time, p.meta, time[datetime], .date"
+      tags:
+        - type: section
+          name: more_lng_news_updates
+        - type: fuel_type
+          name: LNG
+
+# ─── 详情页说明 ───────────────────────────────────────────────────────────────
+# Palladian CMS 详情页结构：
+#   - 文章容器：<article class="article-detail">
+#   - 标题：<header> 内的 <h1>
+#   - 正文：<article-detail> 下的正文 div（实测类名待本地验证）
+#   - 日期：<p class="meta"> 内，同列表页格式
+#
+# 底部有 "You might also like" 相关推荐块和 "Embed | Tags" 工具栏需要清除
+# ─────────────────────────────────────────────────────────────────────────────
+
+detail_page:
+  title_selector: "article.article-detail header h1, h1.article-title, h1"
+  content_selector: >-
+    article.article-detail .article-body,
+    article.article-detail .body,
+    article.article-detail > div.content,
+    article.article-detail > div,
+    main .article-body,
+    .article-content,
+    main .lead,
+    main .row .col-xs-12
+  date_selector: >-
+    article.article-detail p.meta time,
+    article.article-detail .date,
+    p.meta time,
+    time[datetime],
+    .date
+  remove_selectors:
+    # 广告位
+    - ".advertisement"
+    - ".ad-block"
+    - ".advert"
+    # 相关文章推荐（"You might also like"）
+    - ".you-might-also-like"
+    - ".related-articles"
+    - ".also-read"
+    # 文章底部工具栏（Embed / Tags）
+    - ".embed-article"
+    - ".article-tags"
+    - ".article-footer"
+    - ".article-tools"
+    # 社交分享
+    - ".social-share"
+    - ".share-buttons"
+    # 仅打印可见区域（如订阅提示等）
+    - ".visible-print"
+    # 导航 tab（News / Sectors 分类 tab）
+    - ".nav-tabs"
+    - ".tab-content"
+    # 杂志注册 / 订阅横幅
+    - ".register-banner"
+    - ".subscribe-banner"
+    # 脚本 / 样式
+    - "script"
+    - "style"
+    - "noscript"
+
+parse:
+  # 新闻日期格式示例："Monday 20 April 2026 15:00"
+  # 注意：原配置为 "%A, %d %B %Y %H:%M"（含逗号），实际页面不含逗号，已修正
+  #
+  # ⚠️ events 版块日期格式为范围字符串（如 "22 April 2026 - 22 April 2026"），
+  # 无法用此 strptime 格式解析，connector 会自动保留原始字符串，属预期行为
+  date_format: "%A %d %B %Y %H:%M"
+  timezone: UTC
+  # 三个版块合计 limit = 5 + 5 + 10 = 20，留余量
+  max_articles_per_run: 25
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  # lngindustry 文章为专业行业内容，正文普遍较长；
+  # events 版块条目可能较短，若低于此阈值会被标记 failed（属预期行为）
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

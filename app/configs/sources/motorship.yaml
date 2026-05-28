@@ -1,0 +1,272 @@
+# ============================================================
+# motorship.com — The Motorship Marine Technology News
+# https://www.motorship.com
+#
+# The Motorship 是英国权威的船舶动力与海事技术媒体，内容覆盖发动机、
+# 推进系统、燃料与润滑、船舶建造、行业法规、数字化等方向。
+#
+# 当前配置涵盖以下 section：
+#   - latest_news             主页最新要闻
+#   - propulsion              推进系统
+#   - industry_news           行业新闻
+#   - fuels_lubricants        燃料与润滑
+#   - vessels_shipyards       船舶与船厂
+#   - opinion                 观点与评论
+#   - regulation              法规动态
+#   - battery_hybrids         电池混合与全电船舶
+#   - monitoring_digitalisation 监测、控制与数字化
+#   - brand_partners          品牌合作商（赞助内容）
+#
+# 反爬说明：
+#   motorship.com 使用 AWS WAF JavaScript 挑战（HTTP 202 + JS token）。
+#   纯 httpx/urllib 无法通过，必须使用 Playwright 运行无头 Chromium，
+#   由浏览器自动完成 JS 挑战并正常加载页面。
+#   因此 request.use_playwright: true。
+#
+# 列表页文章卡片结构（.subSleeve）：
+#   <div class="subSleeve">
+#     <h2><a href="/{category}/{slug}/{id}.article">Title</a></h2>
+#     <p class="meta">
+#       <span class="date visible"
+#             data-date-timezone='{"publishdate":"2026-04-22T11:53:00"}'>
+#         22/04/2026
+#       </span>
+#     </p>
+#     <p class="intro">Optional teaser text…</p>  <!-- 部分文章有 -->
+#   </div>
+#
+#   item_selector : ".subSleeve"
+#   link_selector : "a[href*='.article']"
+#   title_selector: "h2"
+#   date_selector : ".date"   (文本格式 "22/04/2026"，解析格式 %d/%m/%Y)
+#
+# 详情页结构（订阅制，仅摘要部分公开）：
+#   <div class="synopsis-access">
+#     <p><strong>Lead paragraph…</strong></p>
+#     <p>Second paragraph…</p>
+#   </div>
+#   <div class="accessMessage">
+#     …paywall prompt…
+#   </div>
+#
+#   detail_page.content_selector : ".synopsis-access"
+#   detail_page.remove_selectors : [".accessMessage", "script", "style"]
+#
+# 注：完整正文需要订阅。当前仅能获取文章摘要（synopsis）部分，
+#     通常为 1–3 段，足以满足新闻情报的基本需求。
+#
+# Brand Partners（赞助商内容）：
+#   主页与专题页均包含 .subSleeve 卡片，赞助内容的 URL 格式与普通
+#   文章一致，区别在于所属 /news/ 分类为 sponsored 相关路径，或
+#   section 名称中含 "partner"。此处将其配置为独立 section（url 使用
+#   /brand-partners 如若存在），若无独立列表页则与主页 latest_news 共享。
+# ============================================================
+
+source:
+  name: motorship
+  url: https://www.motorship.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 45
+  use_playwright: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  url: https://www.motorship.com/
+  sections:
+    # ── Latest News 主页最新要闻 ─────────────────────────────────────────────
+    - name: latest_news
+      section_title: "Latest News"
+      # 主页上显示最新要闻列表，.subSleeve 为每篇文章的卡片容器
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: latest_news
+
+    # ── Propulsion 推进系统 ──────────────────────────────────────────────────
+    - name: propulsion
+      section_title: "Propulsion"
+      url: https://www.motorship.com/news/propulsion
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: propulsion
+        - type: term
+          name: propulsion
+
+    # ── Industry News 行业新闻 ───────────────────────────────────────────────
+    - name: industry_news
+      section_title: "Industry News"
+      url: https://www.motorship.com/news/industry-news
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: industry_news
+
+    # ── Fuels & Lubricants 燃料与润滑 ───────────────────────────────────────
+    - name: fuels_lubricants
+      section_title: "Fuels & Lubricants"
+      url: https://www.motorship.com/news/fuels-and-lubricants
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: fuels_lubricants
+        - type: fuel_type
+          name: various
+
+    # ── Vessels & Shipyards 船舶与船厂 ──────────────────────────────────────
+    - name: vessels_shipyards
+      section_title: "Vessels & Shipyards"
+      url: https://www.motorship.com/news/vessels-and-shipyards
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: vessels_shipyards
+        - type: term
+          name: shipbuilding
+
+    # ── Opinion 观点与评论 ───────────────────────────────────────────────────
+    - name: opinion
+      section_title: "Opinion"
+      url: https://www.motorship.com/news/opinion
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: opinion
+
+    # ── Regulation 法规动态 ──────────────────────────────────────────────────
+    - name: regulation
+      section_title: "Regulation"
+      url: https://www.motorship.com/news/regulation
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: regulation
+        - type: term
+          name: regulation
+
+    # ── Battery Hybrids & Full Electric Vessels ──────────────────────────────
+    - name: battery_hybrids
+      section_title: "Battery Hybrids & Full Electric Vessels"
+      url: https://www.motorship.com/news/battery-hybrids-and-full-electric-vessels
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: battery_hybrids
+        - type: fuel_type
+          name: electric
+
+    # ── Monitoring, Control & Digitalisation 监测控制与数字化 ─────────────────
+    - name: monitoring_digitalisation
+      section_title: "Monitoring, Control & Digitalisation"
+      url: https://www.motorship.com/news/monitoring-control-and-digitalisation
+      item_selector: ".subSleeve"
+      link_selector: "a[href*='.article']"
+      title_selector: "h2"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: monitoring_digitalisation
+        - type: term
+          name: digitalisation
+
+    # ── The Motorship Brand Partners 品牌合作商（赞助内容）───────────────────
+    # Brand Partners 是主页中的 JS 轮播（carousel）小部件，无独立列表页面。
+    # 轮播容器内的 item 在 domcontentloaded 时可能尚未全部渲染到 DOM 中，
+    # 且选择器结构与常规 .subSleeve 有所不同，需要进一步确认后再启用。
+    # 如需抓取赞助内容，可访问 https://www.motorship.com/brand-partners 确认
+    # 实际页面 URL，或在主页 HTML 中定位 .brandPartners 容器的选择器。
+    #
+    # - name: brand_partners
+    #   section_title: "The Motorship Brand Partners"
+    #   url: https://www.motorship.com/brand-partners  # 暂无独立列表页
+    #   item_selector: ".subSleeve"
+    #   link_selector: "a[href*='.article']"
+    #   title_selector: "h2"
+    #   date_selector: ".date"
+    #   limit: 8
+    #   tags:
+    #     - type: section
+    #       name: brand_partners
+    #     - type: term
+    #       name: sponsored
+
+detail_page:
+  title_selector: "h1"
+  # 仅摘要部分在订阅付费墙前公开可见（通常 1–3 段）
+  content_selector: ".synopsis-access"
+  date_selector: ".date.visible"
+  remove_selectors:
+    - "script"
+    - "style"
+    - ".accessMessage"
+    - ".cookiePolicy"
+    - ".ad"
+    - "[class*='advert']"
+    - ".leaderboard"
+
+parse:
+  date_format: "%d/%m/%Y"
+  timezone: UTC
+  max_articles_per_run: 90
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 30
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

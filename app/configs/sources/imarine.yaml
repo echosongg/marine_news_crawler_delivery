@@ -1,0 +1,81 @@
+# imarine.cn - Chinese maritime news. The site returns HTTP 403 to plain
+# clients but renders usable HTML in Chromium, so Playwright is required.
+source:
+  name: imarine
+  url: https://www.imarine.cn
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 45
+  use_playwright: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+
+list_page:
+  url: https://www.imarine.cn/news
+  sections:
+    - name: latest_news
+      section_title: "Latest News"
+      item_selector: ".posts-loop > div[class*='post-']"
+      link_selector: "a[href$='.html']:not(.thumbnail-link)"
+      title_selector: "a[href$='.html']:not(.thumbnail-link)"
+      date_selector: ".meta, .entry-meta, .post-meta"
+      tags:
+        - type: section
+          name: latest_news
+        - type: language
+          name: zh
+
+detail_page:
+  title_selector: "h1"
+  content_selector: ".entry-content"
+  date_selector: "article, main"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "noscript"
+    - ".post-tags"
+    - ".related-posts"
+    - ".entry-footer"
+    - ".share"
+
+parse:
+  date_format: "%Y-%m-%d"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 30
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 50
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+    - language
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

@@ -1,0 +1,71 @@
+source:
+  name: abb_cn_products
+  url: https://new.abb.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 30
+  legacy_tls_compatibility: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+
+list_page:
+  url: https://new.abb.com/cn/products-and-services
+  sections:
+    - name: products_and_services
+      section_title: "ABB 产品和服务"
+      item_selector: ".abb-section--three-columns-flow ul.abb-list--unstyled > li"
+      link_selector: "a.abb-link--unstyled[href*='/products/'], a.abb-link--unstyled[href*='/low-voltage/zh/'], a.abb-link--unstyled[href*='/medium-voltage/zh/'], a.abb-link--unstyled[href*='/drives/zh/'], a.abb-link--unstyled[href*='/motors-generators/zh/'], a.abb-link--unstyled[href*='/plc/zh/'], a.abb-link--unstyled[href*='/marine/zh/']"
+      title_selector: "a.abb-link--unstyled"
+      date_selector: null
+
+detail_page:
+  title_selector: "h1"
+  content_selector: ".sfContentBlock:not(.sf-Long-text), .abb-section--article__body, main .abb-section"
+  date_selector: "time, meta[property='article:published_time']"
+  remove_selectors:
+    - "script"
+    - "style"
+    - ".sf-Long-text"
+    - "#country-selector-app"
+    - ".cookie-banner"
+
+parse:
+  date_format: "%Y-%m-%d"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 80
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

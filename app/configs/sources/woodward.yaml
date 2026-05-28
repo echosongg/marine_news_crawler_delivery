@@ -1,0 +1,163 @@
+# ============================================================
+# woodward.com — 全量工业产品目录
+# https://www.woodward.com/products/
+#
+# 背景：
+#   原配置仅抓取喷射器（fuel injectors），本次扩展为抓取工业产品全目录。
+#   站点 /products/ 首页为前端交互分页，直接翻页 URL 是 hash（#2/#3），
+#   不利于后端无状态抓取。实际 WordPress 归档页可直接访问：
+#     /products/industrial/page/1/
+#     /products/industrial/page/2/
+#     /products/industrial/page/3/
+#     /products/industrial/page/4/
+#   以上 4 页合计可覆盖当前工业产品列表（约 32 项）。
+#
+# 页面结构（SSR WordPress，无需 JS）：
+#   列表页：li.wp-block-post
+#     标题/链接：h3 > a  (或 .wp-block-post-title > a)
+#     日期：      time
+#   详情页（产品信息页）：
+#     标题：  h1
+#     正文：  .entry-content（含 Features & Functionality、Key Features 等章节）
+#     日期：  time
+#
+# 注意：此 source 抓取的是产品目录信息，不是新闻。
+#       日期为页面最后更新时间，date_selector 无法获取时回退至当日日期。
+# ============================================================
+
+source:
+  name: woodward
+  url: https://www.woodward.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 20
+  # woodward.com 的 TLS 配置与 httpx 不兼容（UNEXPECTED_EOF），改用 urllib 回退
+  legacy_tls_compatibility: true
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+
+list_page:
+  url: https://www.woodward.com/products/industrial/page/1/
+  sections:
+    - name: industrial_products_p1
+      section_title: "Woodward Industrial Products P1"
+      url: https://www.woodward.com/products/industrial/page/1/
+      item_selector: "li.wp-block-post"
+      link_selector: "h3 a, h2 a, .wp-block-post-title a"
+      title_selector: "h3, h2.wp-block-post-title, .wp-block-post-title"
+      date_selector: "time"
+      tags:
+        - type: section
+          name: product_catalog
+        - type: company
+          name: woodward
+        - type: language
+          name: en
+
+    - name: industrial_products_p2
+      section_title: "Woodward Industrial Products P2"
+      url: https://www.woodward.com/products/industrial/page/2/
+      item_selector: "li.wp-block-post"
+      link_selector: "h3 a, h2 a, .wp-block-post-title a"
+      title_selector: "h3, h2.wp-block-post-title, .wp-block-post-title"
+      date_selector: "time"
+      tags:
+        - type: section
+          name: product_catalog
+        - type: company
+          name: woodward
+        - type: language
+          name: en
+
+    - name: industrial_products_p3
+      section_title: "Woodward Industrial Products P3"
+      url: https://www.woodward.com/products/industrial/page/3/
+      item_selector: "li.wp-block-post"
+      link_selector: "h3 a, h2 a, .wp-block-post-title a"
+      title_selector: "h3, h2.wp-block-post-title, .wp-block-post-title"
+      date_selector: "time"
+      tags:
+        - type: section
+          name: product_catalog
+        - type: company
+          name: woodward
+        - type: language
+          name: en
+
+    - name: industrial_products_p4
+      section_title: "Woodward Industrial Products P4"
+      url: https://www.woodward.com/products/industrial/page/4/
+      item_selector: "li.wp-block-post"
+      link_selector: "h3 a, h2 a, .wp-block-post-title a"
+      title_selector: "h3, h2.wp-block-post-title, .wp-block-post-title"
+      date_selector: "time"
+      tags:
+        - type: section
+          name: product_catalog
+        - type: company
+          name: woodward
+        - type: language
+          name: en
+
+detail_page:
+  title_selector: "h1"
+  date_selector: "time"
+  # .entry-content 包含产品描述、功能特性、主要变体、关键参数等全部内容
+  content_selector: ".entry-content"
+  remove_selectors:
+    - "nav"
+    - "header"
+    - "footer"
+    - ".site-footer"
+    - ".site-header"
+    # Woodward 自定义面包屑导航（Home / Products / ...）
+    - ".woodward-breadcrumbs"
+    - ".wp-block-breadcrumbs"
+    - "[class*='breadcrumb']"
+    # 产品图片轮播（纯图片，无文字价值）
+    - ".product-slider-wrapper"
+    - ".product-slider"
+    # "Contact Our Sales Team" 末尾联系区块
+    - ".contact-cta"
+    - "[class*='contact']"
+    - "script"
+    - "style"
+    - "form"
+
+parse:
+  # 列表页日期格式：Apr 16, 2026
+  date_format: "%b %d, %Y"
+  timezone: America/Denver
+  max_articles_per_run: 50
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 100
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - company
+    - fuel_type
+    - technology
+    - vessel_type
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

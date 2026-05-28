@@ -1,0 +1,97 @@
+source:
+  name: wartsila_cn_media
+  url: https://www.wartsila.cn/media
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 30
+  # wartsila.cn 在部分环境 TLS 握手不稳定，沿用兼容模式
+  legacy_tls_compatibility: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+
+list_page:
+  url: https://www.wartsila.cn/media
+  sections:
+    # 全球新闻与新闻稿
+    - name: global_news
+      section_title: "全球新闻与新闻稿"
+      url: https://www.wartsila.cn/media/news
+      item_selector: "div.news-list__item"
+      link_selector: "a[href*='/media/news/']"
+      title_selector: "a p, a"
+      date_selector: ".news-list__date-label"
+      tags:
+        - type: section
+          name: global_news
+        - type: company
+          name: wartsila
+
+    # 本地新闻与新闻稿
+    - name: local_news
+      section_title: "本地新闻与新闻稿"
+      url: https://www.wartsila.cn/media/local-news
+      item_selector: "div.news-list__item"
+      link_selector: "a[href*='/media/local-news/']"
+      title_selector: "a p, a"
+      date_selector: ".news-list__date-label"
+      tags:
+        - type: section
+          name: local_news
+        - type: company
+          name: wartsila
+
+detail_page:
+  title_selector: "div.news-detail h1, h1"
+  content_selector: "div.news-detail__content"
+  # 详情页日期常为“22 十二月 2025 at 08:30 UTC+2”，不匹配 parse.date_format；
+  # 为避免覆盖列表页可解析日期，显式使用不存在选择器。
+  date_selector: "time.nonexistent"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "header"
+    - "footer"
+    - "nav"
+    - ".news-detail__image"
+
+parse:
+  # 列表页日期示例：22 12月 2025
+  date_format: "%d %m月 %Y"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 40
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

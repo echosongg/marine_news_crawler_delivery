@@ -1,0 +1,234 @@
+# ============================================================
+# xindemarinenews.com — 信德海事网
+# https://www.xindemarinenews.com
+#
+# 信德海事网（Xinde Marine News）是中国领先的专业海事资讯平台，
+# 内容覆盖国内外航运、造船、港口、市场行情、活动会议等，
+# 每日发布多篇文章，是国内海事媒体更新频率最高的平台之一。
+#
+# 技术特点：
+#   - 基于 DedeCMS（织梦 CMS）构建，GBK 编码（HTMLConnector 自动识别）
+#   - 无 Cloudflare / WAF 保护，普通 HTTP 请求即可访问
+#   - 国内（/china/）、国际（/world/）、活动（/activity/）频道：
+#     列表为静态 HTML；活动部分详情页 ``.contain_detail_cnt`` 可能为空
+#     （正文在 ``.bottom_over_cnt`` 等），或列表仍含失效的 plus/view.php 链
+#   - 航情市场子频道（/market/...）：列表内容通过 AJAX 动态加载，
+#     静态 HTML 中仅轮播图（.sliderContain）有 4 篇硬编码链接；
+#     完整列表抓取请使用 xindemarinenews_market.yaml（需要 Playwright）
+#
+# 主要导航 URL（从 /china/ 页面 nav 提取）：
+#   /china/          国内新闻
+#   /world/          国际新闻
+#   /activity/       活动会议
+#   /market/         航情（市场）总览
+#   /market/hangqingguancha/   每日简讯/航情观察
+#   /market/shichangjiaoyi/    市场交易/报告
+#   /market/haishizhoubao/     海事安全周报
+#   /market/lvsedongcha/       绿色洞察
+#   /job/            招聘
+#   /columnist/      专栏
+#   /en/             英文版
+#
+# 列表页 HTML 结构（国内/国际/活动，静态渲染）：
+#   <ul id='listNewsTimeLy' class="listNewsTimeLy">
+#     <li class="J-has-share listNews-item-s1 clearfix">
+#       <div class="img fl"><a href="/{section}/{id}.html"><img .../></a></div>
+#       <div class="info">
+#         <h3>
+#           <a class="J-share-a" href="/{section}/{id}.html" target="_blank">
+#             <b>文章标题</b>
+#           </a>
+#         </h3>
+#         <p class="desc">文章摘要...</p>
+#         <p class="from">2026-04-15 19:16:23 来源：信德海事网</p>
+#       </div>
+#     </li>
+#     ...
+#   </ul>
+#
+# 详情页 HTML 结构（全站 DedeCMS 统一模板）：
+#   <div class="J-title_detail title_detail">
+#     <h1><span>文章标题</span></h1>
+#   </div>
+#   <div class='share_cnt_p'>
+#     <i>2026-04-14 17:45</i>来源：<i>信德海事网</i>
+#   </div>
+#   <div class="J-contain_detail_cnt contain_detail_cnt">
+#     <p>正文段落...</p>
+#     ...
+#   </div>
+#
+# 本配置（xindemarinenews.yaml）覆盖：
+#   - china       国内新闻（更新最频繁，每日多篇）
+#   - world       国际新闻（每日多篇）
+#   - activity    活动会议（每日数篇，中英文混合）
+#
+# 航情市场专项配置见 xindemarinenews_market.yaml：
+#   - market_daily   每日简讯/航情观察（需要 Playwright）
+#   - market_report  市场交易/报告（需要 Playwright）
+#   - market_safety  海事安全周报（需要 Playwright）
+# ============================================================
+
+source:
+  name: xindemarinenews
+  url: https://www.xindemarinenews.com
+  type: news
+  strategy: html
+  status: enable
+
+request:
+  timeout: 30
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+    Accept-Language: "zh-CN,zh;q=0.9,en;q=0.8"
+    Referer: "https://www.xindemarinenews.com/"
+
+list_page:
+  url: https://www.xindemarinenews.com
+  # 部分列表项仍链到织梦旧版 /plus/view.php?aid=…，常返回无正文或错误短页
+  url_deny_substrings:
+    - "/plus/view.php"
+  sections:
+    # ── 0. 首页要闻速递（时新优先）──────────────────────────────────────────────
+    # 首页热榜区块（要闻速递）通常最先更新，常早于频道聚合页。
+    # 结构：.hot-news-top .hnt-list > li.hnt-item > a.title-lg
+    # 文章来自 /china/ /world/ /activity/ 等频道，列表通常无日期，依赖详情页日期。
+    - name: hot_news
+      section_title: "要闻速递"
+      url: https://www.xindemarinenews.com/
+      item_selector: ".hot-news-top .hnt-list li.hnt-item"
+      link_selector: "a.title-lg[href], a.index-hot-news[href]"
+      title_selector: "a.title-lg, a.index-hot-news"
+      date_selector: "time.nonexistent"
+      tags:
+        - type: source_section
+          name: hot_news
+        - type: language
+          name: zh
+
+    # ── 1. 国内新闻 ─────────────────────────────────────────────────────────────
+    # 中国航运、造船、港口、企业动态等国内综合新闻
+    # 文章 URL 格式：/china/{id}.html
+    # 更新频率：每日 8–15 篇，全站最高频板块
+    - name: china
+      section_title: "国内"
+      url: https://www.xindemarinenews.com/china/
+      item_selector: "#listNewsTimeLy li"
+      link_selector: "h3 a[href]"
+      title_selector: "h3 a"
+      date_selector: "p.from"
+      tags:
+        - type: source_section
+          name: china
+        - type: region
+          name: China
+        - type: language
+          name: zh
+
+    # ── 2. 国际新闻 ─────────────────────────────────────────────────────────────
+    # 全球航运、油轮、干散货、集装箱、新造船、海峡热点等国际资讯
+    # 文章 URL 格式：/world/{id}.html
+    # 更新频率：每日 8–12 篇
+    - name: world
+      section_title: "国际"
+      url: https://www.xindemarinenews.com/world/
+      item_selector: "#listNewsTimeLy li"
+      link_selector: "h3 a[href]"
+      title_selector: "h3 a"
+      date_selector: "p.from"
+      tags:
+        - type: source_section
+          name: world
+        - type: region
+          name: Global
+        - type: language
+          name: zh
+
+    # ── 3. 活动会议 ─────────────────────────────────────────────────────────────
+    # 国内外航运论坛、展会、研讨会、颁奖典礼等活动公告及报道
+    # 文章 URL 格式：/activity/{id}.html
+    # 更新频率：每日 3–8 篇，中英文混合（国际活动多为英文）
+    - name: activity
+      section_title: "活动"
+      url: https://www.xindemarinenews.com/activity/
+      item_selector: "#listNewsTimeLy li"
+      link_selector: "h3 a[href]"
+      title_selector: "h3 a"
+      date_selector: "p.from"
+      tags:
+        - type: source_section
+          name: activity
+        - type: language
+          name: zh
+
+detail_page:
+  # 全站 DedeCMS 通用详情页模板：
+  #   标题：.title_detail 内的 <h1><span>...</span></h1>
+  #   日期：.share_cnt_p 内第一个 <i> 标签（格式：2026-04-14 17:45）
+  #   正文：.contain_detail_cnt；活动/会议等模板在静态 HTML 中常为空，则回退
+  #   至 .detail_left_cnt 并在正文仍过短时追加 .bottom_over_cnt
+  title_selector: ".title_detail h1"
+  content_selector: ".contain_detail_cnt"
+  content_fallback_selector: ".detail_left_cnt"
+  content_supplement_selector: ".bottom_over_cnt"
+  content_supplement_if_body_shorter_than: 200
+  date_selector: ".share_cnt_p i"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - "h1"                        # 标题已单独提取
+    # 注意：不可删除 .share_cnt_p。connector 先执行 remove 再取 date_selector；
+    # 若先删掉 share_cnt_p，.share_cnt_p i 无法取到时间，会回退到 p.from
+    # 的「2026-.. 来源：…」非 ISO 字符串，Pydantic 校验 publish_date 失败。
+    - ".discuss-wrap"             # 评论入口按钮
+    - ".social-share"             # 社交分享工具条
+    - ".gg_detail_cnt"            # 广告区块（正文上方）
+    - ".gg_item_bomttom_cnt"      # 广告区块（正文下方）
+    - ".ggPic_item_bomttom_cnt"   # 图片广告区块
+    - ".pagination"               # 分页导航（长文分页）
+    - ".guess_like"               # "猜你喜欢"推荐区
+    - ".related-news"             # 相关新闻推荐
+    - "#artical_relatednews"      # 相关资讯区块（旧 ID）
+    - ".bk3"                      # Banner 广告
+    - ".shop_guide"               # 底部商城/导航
+    - "[class*='couplet_ad']"     # 浮层广告
+
+parse:
+  # 详情页日期格式：2026-04-14 17:45
+  # p.from 列表日期格式：2026-04-15 19:16:23（含秒，strptime 自动截断）
+  date_format: "%Y-%m-%d %H:%M"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 30
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

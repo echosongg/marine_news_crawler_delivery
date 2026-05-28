@@ -1,0 +1,93 @@
+# ============================================================
+# maritimepropulsion.com — Propulsion Database (engine directory)
+# https://www.maritimepropulsion.com/directory/
+#
+# 发动机数据库，更新频率极低，建议按需手动运行而非定时任务。
+# 每个条目包含：型号、品牌、技术规格、功率、价格等。
+# 以 article 格式返回；发布日期无法从页面获取，自动回退到抓取当日。
+# ============================================================
+
+source:
+  name: maritimepropulsion_propulsion_database
+  url: https://www.maritimepropulsion.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 20
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  url: https://www.maritimepropulsion.com/directory/
+  sections:
+    - name: engine_directory
+      section_title: "Propulsion Database"
+      # 列表结构：div.product-search-item > a[href*='/directory/product/']
+      item_selector: "div.product-search-item"
+      link_selector: "a[href*='/directory/product/']"
+      title_selector: "a[href*='/directory/product/']"
+      # 数据库条目无发布日期，detail_page date_selector 返回空后自动回退到今日
+      date_selector: null
+      tags:
+        - type: section
+          name: engine_directory
+        - type: content_type
+          name: product_database
+
+detail_page:
+  # 产品详情页结构：
+  #   <h1>Caterpillar 3408-TTA (2300) 600HP</h1>
+  #   <b>Model: ...</b>
+  #   <h4>Brand: ...</h4>
+  #   <div> Product Description / Full Specification / Technical Specifications ... </div>
+  title_selector: "h1"
+  content_selector: ".content, .innertube"
+  # 产品页无日期，此选择器返回空，connector 自动使用今日日期
+  date_selector: "p.meta span.date"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - "label"                    # "Compare" 复选框 label
+    - "input[type='checkbox']"   # Compare checkbox
+    - "input[type='hidden']"     # 隐藏的 Brand 字段
+    - "div.product-search-item"  # 页面底部相似产品推荐
+    - ".banners"                 # 广告 banner
+
+parse:
+  date_format: "%B %d, %Y"
+  timezone: UTC
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 40
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - company
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

@@ -1,0 +1,190 @@
+# ============================================================
+# wartsila.cn — 瓦锡兰产品目录
+# https://www.wartsila.cn/marine/products
+#
+# 覆盖范围：
+#   1. 发动机和发电机组（柴油机 / 双燃料 / 甲醇燃料 / NOx减排 / 发电机组）
+#   2. 推进装置和齿轮箱（全回转推进器 / 侧推 / 螺旋桨 / 喷水推进器 / 节能装置）
+#   3. 船舶电气化解决方案（岸电 / 轴带发电机 / 混合动力 / 全电动）
+#
+# 网站结构说明：
+#   - Sitefinity CMS 构建，产品导航嵌入在侧边栏 <ul> 层级中
+#   - 导航 li 的 class 反映层级深度：
+#       5-level-wrapper → 分类子标题 OR 直属产品页面
+#       6-level-wrapper → 子分类下的具体产品页面
+#   - 关键过滤：link_selector 仅选取 URL 含 "wartsila" 的链接，
+#     排除纯分类汇总页（如 /diesel-engines, /thrusters, /propellers 等），
+#     船舶电气化产品无"wartsila"前缀则直接按分类路径过滤
+#   - 产品页无发布日期，自动回退到抓取当日
+#   - 产品目录更新极少，默认跳过常规批量抓取
+#
+# 主要内容元素：
+#   列表页：<li class="6-level-wrapper"> / <li class="5-level-wrapper">
+#   详情页：<h1> 标题 + <main> 主体（约 1500–3000 字符）
+#
+# TLS 说明：
+#   wartsila.cn 使用 TLS 握手异常，需 verify=False（legacy_tls_compatibility）
+# ============================================================
+
+source:
+  name: wartsila_cn_products
+  url: https://www.wartsila.cn
+  type: html
+  strategy: html
+  status: enable
+  # 产品目录极少更新，不参与常规定时批量抓取；手动按需触发
+  skip_in_regular_crawl: true
+
+request:
+  timeout: 30
+  # wartsila.cn TLS 握手异常，启用 legacy 路径（httpx verify=False）
+  legacy_tls_compatibility: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+
+list_page:
+  # 产品总入口（无实质内容，仅用于确定 base URL）
+  url: https://www.wartsila.cn/marine/products/engines-and-generating-sets
+  sections:
+    # ── 1. 发动机和发电机组 ─────────────────────────────────────────
+    # 涵盖：
+    #   直属产品（5-level-wrapper，URL 含 wartsila）：
+    #     W20、W32甲醇发动机、发电机组、发动机辅助系统
+    #   子分类产品（6-level-wrapper，URL 含 wartsila）：
+    #     柴油机：W14、W26、W32
+    #     双燃料：W25、W31、W34DF、W46F、W46TS-DF
+    #     NOx：NOR 减排装置
+    # 排除（URL 不含 wartsila）：分类汇总页 /diesel-engines、/dual-fuel-engines
+    - name: engines_and_gensets
+      section_title: "发动机和发电机组"
+      url: "https://www.wartsila.cn/marine/products/engines-and-generating-sets"
+      # 同时扫描 5-level（直属产品）和 6-level（子分类下产品）
+      item_selector: 'li[class~="5-level-wrapper"], li[class~="6-level-wrapper"]'
+      # 仅采集 href 同时含 "wartsila" 和 "/engines-and-generating-sets/" 的链接
+      # 这样可自动排除 /diesel-engines、/nox-abatement 等子分类汇总页
+      link_selector: 'a[href*="wartsila"][href*="/engines-and-generating-sets/"]'
+      title_selector: "a[href]"
+      date_selector: null    # 产品目录无发布日期
+      tags:
+        - type: section
+          name: engines_and_gensets
+        - type: content_type
+          name: product
+        - type: product_category
+          name: engine
+
+    # ── 2. 推进装置和齿轮箱 ─────────────────────────────────────────
+    # 涵盖（URL 含 wartsila）：
+    #   全回转推进器、WST-18E、侧推、水下推进器
+    #   双速/双进单出/单输入齿轮箱
+    #   EnergoProFin、组装式定距桨、沿海/内河螺旋桨、EnergoFlow、可调螺距桨
+    #   中型/模块式喷水推进器
+    #   瓦锡兰EcoControl（推进控制）
+    #   高效舵、OPTI优化设计（节能）
+    # 注意：部分产品 URL 不含"wartsila"（门舵/gate-rudder、旋筒风帆/rotor-sail
+    #       等），将被过滤器排除，如需抓取可将其 URL 作为 section.url 单独配置。
+    - name: propulsors_and_gears
+      section_title: "推进装置和齿轮箱"
+      url: "https://www.wartsila.cn/marine/products/propulsors-and-gears"
+      item_selector: 'li[class~="5-level-wrapper"], li[class~="6-level-wrapper"]'
+      link_selector: 'a[href*="wartsila"][href*="/propulsors-and-gears/"]'
+      title_selector: "a[href]"
+      date_selector: null
+      tags:
+        - type: section
+          name: propulsors_and_gears
+        - type: content_type
+          name: product
+        - type: product_category
+          name: propulsion
+
+    # ── 3. 船舶电气化解决方案 ──────────────────────────────────────
+    # 涵盖：
+    #   子分类产品（6-level）：岸电替代方案、充电系统
+    #   直属产品（5-level）：轴带发电机、混合动力、全电动船、电力推进系统、
+    #                        混动LNG运输船
+    # 注意：该分类所有产品 URL 均无 "wartsila" 前缀，
+    #       改为按分类路径 /ship-electrification-solutions/ 过滤；
+    #       分类汇总页 /shore-power 因内容较简短会被 min_content_length 过滤
+    - name: ship_electrification
+      section_title: "船舶电气化解决方案"
+      url: "https://www.wartsila.cn/marine/products/ship-electrification-solutions"
+      item_selector: 'li[class~="5-level-wrapper"], li[class~="6-level-wrapper"]'
+      link_selector: 'a[href*="/ship-electrification-solutions/"]'
+      title_selector: "a[href]"
+      date_selector: null
+      tags:
+        - type: section
+          name: ship_electrification
+        - type: content_type
+          name: product
+        - type: product_category
+          name: electrification
+
+detail_page:
+  # 产品详情页结构（Sitefinity CMS）：
+  #   <h1>产品名称</h1>
+  #   <main>                     ← 正文内容区（约 1500–3000 字符）
+  #     <p>产品简介...</p>
+  #     <h2>主要优点</h2>
+  #     <ul>...</ul>
+  #     <h2>技术参数</h2>
+  #     ...
+  #   </main>
+  title_selector: "h1"
+  content_selector: "main"
+  # 产品页无日期，使用不匹配的选择器回退到今日日期
+  date_selector: "time.product-publish-date"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "header"
+    - "footer"
+    - "nav"
+    # Sitefinity 导航区块
+    - ".navWrapper"
+    - ".menu-wrapper-layout-container"
+    - '[class*="nav-wrapper"]'
+    - '[class*="sub-nav"]'
+    # 页内跳转链接、视频占位符、Cookie 提示
+    - ".cookie-consent"
+    - ".wistia-embed"             # 视频嵌入占位（Wistia 播放器）
+    - ".sf-lang-selector"         # 语言切换
+    - "form"
+    # 页面底部"相关产品"区块，非核心内容
+    - ".related-products"
+    - '[class*="related"]'
+
+parse:
+  date_format: "%Y-%m-%d"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 65    # 约 3 sections × 最多 20-30 个产品
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 200     # 过滤掉内容稀少的分类汇总页
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - company
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

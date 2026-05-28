@@ -1,0 +1,18 @@
+# 打包产物（通过 GitHub Release 下载，不纳入 git）
+marine_news_crawler.exe
+_internal/
+
+# 运行时生成
+logs/
+output/
+data/
+*.db
+*.log
+
+# 本地 Release 构建目录（zip 上传后无需提交）
+dist/
+
+# 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store

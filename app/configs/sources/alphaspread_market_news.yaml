@@ -1,0 +1,85 @@
+# Alpha Spread market news. This is a finance-oriented feed from the design
+# list; keep it enabled as an isolated source so downstream filtering can decide
+# whether to use it.
+source:
+  name: alphaspread_market_news
+  url: https://www.alphaspread.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 25
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  url: https://www.alphaspread.com/market-news
+  sections:
+    - name: market_news
+      section_title: "Alpha Spread Market News"
+      item_selector: "a.ui.link.alpha-news.card[href*='/market-news/']"
+      link_selector: "a[href]"
+      title_selector: "h2, h3, [class*='title']"
+      date_selector: "time, [class*='date'], a"
+      tags:
+        - type: section
+          name: market_news
+        - type: term
+          name: market
+        - type: language
+          name: en
+
+detail_page:
+  title_selector: "h1"
+  content_selector: "div#main"
+  date_selector: "div#main"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - "[class*='share']"
+    - "[class*='Other']"
+    - "[class*='related']"
+    - ".main-menu"
+
+parse:
+  date_format: "%b %d, %Y"
+  timezone: UTC
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+    - language
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

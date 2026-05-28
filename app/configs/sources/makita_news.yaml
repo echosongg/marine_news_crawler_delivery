@@ -1,0 +1,106 @@
+# Makita global news. The news page links fixed IR collection pages for
+# quarterly results; those PDFs are crawled directly from the IR library section
+# so the shared HTMLConnector PDF path can parse them.
+source:
+  name: makita_news
+  url: https://www.makita.biz
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 25
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9,ja;q=0.8
+
+list_page:
+  url: https://www.makita.biz/news/
+  url_deny_substrings:
+    # Fixed IR collection pages are not article bodies. Their PDFs are crawled
+    # by the dedicated ir_financial_results section below.
+    - /ir/library/
+    - /ir/event/
+  sections:
+    - name: latest_news
+      section_title: "Makita News"
+      item_selector: "article.newsItem"
+      link_selector: "a[href]"
+      title_selector: "a[href]"
+      date_selector: "time"
+      tags:
+        - type: section
+          name: latest_news
+        - type: company
+          name: makita
+        - type: language
+          name: en
+
+    - name: ir_financial_results
+      section_title: "Makita IR Financial Results"
+      url: https://www.makita.biz/ir/library/library_02.html
+      item_selector: "li.irc_library_each"
+      link_selector: "a[href*='financial_results'][href$='.pdf']"
+      title_selector: "a[href*='financial_results'][href$='.pdf']"
+      date_selector: ".irc_library_yymmdd"
+      tags:
+        - type: section
+          name: ir_financial_results
+        - type: company
+          name: makita
+        - type: language
+          name: en
+        - type: term
+          name: financial_results
+
+detail_page:
+  title_selector: "h1"
+  content_selector: "main article, article, main"
+  date_selector: "article time, main time, time"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - ".breadcrumb"
+    - "[class*='share']"
+    - "[class*='related']"
+
+parse:
+  date_format: "%Y/%m/%d"
+  timezone: Asia/Tokyo
+  max_articles_per_run: 30
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 50
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+    - language
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

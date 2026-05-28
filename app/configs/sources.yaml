@@ -1,0 +1,243 @@
+# jstra 新闻页
+- name: jstra
+  url: https://www.jstra.jp
+  type: html
+  status: enable
+
+# jstra 海外情報報告書（年度別）。更新は年 1 回程度、手動実行推奨
+- name: jstra_annual_reports
+  url: https://www.jstra.jp
+  type: html
+  status: disable
+  skip_in_regular_crawl: true
+
+- name: rivieramm_marine_propulsion
+  url: https://www.rivieramm.com/marine-propulsion--auxiliary-machinery
+  type: html
+  status: enable
+# lngindustry
+- name: lngindustry
+  url: https://www.lngindustry.com
+  type: html
+  status: enable
+
+# Drewry 新闻
+- name: drewry_news
+  url: https://www.drewry.co.uk
+  type: html
+  status: enable
+
+# 中国海洋装备工程科技发展战略研究院（一周海洋信息 PDF）
+- name: csioe_weekly_info
+  url: https://csioe.sjtu.edu.cn
+  type: html
+  status: enable
+# splash247主页面新闻直接抓取
+# splash247_rss：Splash247 分类页均由 JS 渲染，改用 RSS Feed 抓取
+# 当前涵盖：SplashTech Latest、Offshore（各自独立 RSS Feed，均已验证）
+# 如需扩展其他分类，在 splash247_rss.yaml 的 sections 下新增 section 即可
+- name: splash247
+  url: https://splash247.com
+  type: html
+  status: enable
+
+- name: splash247_rss
+  url: https://splash247.com
+  type: rss
+  status: enable
+
+# eworldship：抓首页三个主 tab（综合、船市、国际纵览），GBK + legacy TLS
+- name: eworldship
+  url: https://www.eworldship.com
+  type: html
+  status: enable
+
+# marinelink.com：近海（Offshore）与沿海内河（Coastal/Inland）海事市场新闻
+# 通过 ws15 子域访问（www 对爬虫返回 403）
+- name: marinelink
+  url: https://ws15.marinelink.com
+  type: html
+  status: enable
+
+# 信德海事网主站新闻（首页要闻 + 国内/国际/活动）
+- name: xindemarinenews
+  url: https://www.xindemarinenews.com
+  type: html
+  status: enable
+
+# 信德海事网航情市场专项（每日简讯/市场报告/安全周报/绿色洞察）
+- name: xindemarinenews_market
+  url: https://www.xindemarinenews.com
+  type: html
+  status: disable
+
+# MAN Energy Solutions 已于 2025-06-04 更名为 Everllence，
+# 旧站 man-es.com 仅保留历史存档，新闻更新已停止，改用 everllence 抓取
+- name: man_press_releases
+  url: https://www.man-es.com/company/press-releases
+  type: html
+  status: disable
+
+- name: everllence
+  url: https://www.everllence.com
+  type: html
+  status: enable
+# ABB
+#ABB product产品和服务目录更新频率较低，默认不参与常规 /crawl/run
+- name: abb_cn_news_center
+  url: https://new.abb.com/cn/news-center
+  type: html
+  status: enable
+
+- name: abb_cn_products
+  url: https://new.abb.com/cn/products-and-services
+  type: html
+  status: disable
+  skip_in_regular_crawl: true
+
+# woodward 工业产品目录（产品信息，非新闻，更新频率较低）
+- name: woodward
+  url: https://www.woodward.com/products/industrial/
+  type: html
+  status: disable
+  skip_in_regular_crawl: true
+
+# wartsila.cn 产品目录（发动机/推进/电气化），更新极少，默认跳过常规抓取
+- name: wartsila_cn_products
+  url: https://www.wartsila.cn
+  type: html
+  status: disable
+  skip_in_regular_crawl: true
+
+# wartsila.cn 新闻页（全球新闻 + 本地新闻）
+- name: wartsila_cn_media
+  url: https://www.wartsila.cn/media
+  type: html
+  status: enable
+
+# Wärtsilä 全球新闻（Cision 新闻发布中心）
+- name: wartsila_cision
+  url: https://news.cision.com/wartsila-corporation
+  type: html
+  status: enable
+
+# maritimepropulsion
+# 分为新闻页面和发动机数据库页面
+# 发动机数据库，更新极慢，建议按需手动运行
+- name: maritimepropulsion_propulsion_database
+  url: https://www.maritimepropulsion.com
+  type: html
+  status: disable
+  skip_in_regular_crawl: true
+
+# yuchaiglobal.com 玉柴国际站产品目录（WooCommerce，含发动机/发电机组/工程机械等）
+# 中文主站 yuchai.com 的产品页为 JS 渲染，无法抓取，故使用国际站
+# 产品数据极少更新，默认跳过常规批量抓取
+- name: yuchai_products
+  url: https://www.yuchaiglobal.com
+  type: html
+  status: enable
+  skip_in_regular_crawl: true
+
+# 中国船舶集团第七一一研究所产品目录（柴油机/气体机/热气机/动力集成/自动化等）
+# 产品线稳定、极少更新，默认跳过常规批量抓取
+- name: csic_711_products
+  url: http://www.csic-711.com
+  type: html
+  status: disable
+  skip_in_regular_crawl: true
+
+# 中国船舶集团第七一一研究所新闻（公司新闻 + 科研动态）
+- name: csic_711_news
+  url: http://www.csic-711.com
+  type: html
+  status: disable
+
+# motorship.com — 推进与海事技术新闻（英国权威媒体）
+# 使用 AWS WAF JS 挑战，需 Playwright 无头浏览器
+- name: motorship
+  url: https://www.motorship.com
+  type: html
+  status: enable
+
+# seatrade-maritime.com — 综合海事新闻（Latest News via RSS）
+# HTML 列表页受 Cloudflare 403 保护；RSS /rss.xml 无限制；详情页需 Playwright
+- name: seatrade
+  url: https://www.seatrade-maritime.com
+  type: rss
+  status: enable
+
+# seatrade-maritime.com — Containers 与 Strait of Hormuz 专项分类（Playwright HTML）
+- name: seatrade_sections
+  url: https://www.seatrade-maritime.com
+  type: html
+  status: enable
+
+- name: imarine
+  url: https://www.imarine.cn
+  type: html
+  status: enable
+
+- name: yanmar_mynewsdesk
+  url: https://www.mynewsdesk.com/yanmar
+  type: html
+  status: enable
+
+# hd.com returns CloudFront 403 from the local crawler environment.
+- name: hd_media_hub
+  url: https://www.hd.com
+  type: html
+  status: disable
+
+- name: j_eng_news
+  url: https://www.j-eng.co.jp
+  type: html
+  status: enable
+
+# mes.co.jp returns Access Denied from the local crawler environment.
+- name: mes_news
+  url: https://www.mes.co.jp
+  type: html
+  status: disable
+
+- name: makita_news
+  url: https://www.makita.biz
+  type: html
+  status: enable
+
+- name: akasaka_diesel_news
+  url: https://www.akasaka-diesel.jp
+  type: html
+  status: enable
+
+- name: kawasaki_newsroom
+  url: https://global.kawasaki.com
+  type: html
+  status: enable
+
+- name: kanadevia_newsroom
+  url: https://www.kanadevia.com
+  type: html
+  status: enable
+
+- name: alphaspread_market_news
+  url: https://www.alphaspread.com
+  type: html
+  status: enable
+
+# abc-engines.com serves a verification page to local Playwright.
+- name: abc_engines_news
+  url: https://www.abc-engines.com
+  type: html
+  status: disable
+
+- name: d_infi_news
+  url: https://www.d-infi.com/en/news/
+  type: html
+  status: enable
+
+# caterpillar.com returns Access Denied from the local crawler environment.
+- name: caterpillar_news
+  url: https://www.caterpillar.com
+  type: html
+  status: disable

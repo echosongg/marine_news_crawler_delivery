@@ -1,0 +1,198 @@
+# ============================================================
+# marinelink.com — Maritime News (Marine Link)
+# https://www.marinelink.com
+#
+# MarineLink 是美国历史悠久的航运与海事行业新闻平台，当前配置涵盖：
+#   - latest_news   主页"Latest Maritime News"最新要闻（无分类）
+#   - shipbuilding  造船行业新闻
+#   - offshore      近海/海上能源新闻
+#   - coastal_inland 沿海、内河与工作船新闻
+#   - equipment     海事设备与技术新闻
+#
+# 网站反爬说明：
+#   www.marinelink.com 对程序性访问返回 403（Cloudflare 防护）。
+#   ws15.marinelink.com 为该站的负载均衡节点，提供完全相同的内容
+#   且无 Bot 拦截。因此 source.url 与所有抓取 URL 均指向 ws15 子域。
+#   输出的 article_url 为 ws15 子域 URL，内容与 www 主域完全一致。
+#
+# 分类页面列表结构（shipbuilding / offshore / coastal-inland）：
+#   <div class="flat-list">       ← 单个容器，直接包含所有文章 <a>
+#     <a href="/news/[slug]-[id]">
+#       <div class="date">22 Apr 2026</div>
+#       <h3>Title</h3>
+#       ...
+#     </a>
+#     ...
+#   </div>
+#
+#   item_selector 选中所有 <a> 子节点（即 item 本身是锚点）；
+#   link_selector: "a[href]" 在 item 内无子锚点时自动回退到 item 自身，
+#   正确读取 href 属性（extract_links 已支持此 fallback）。
+#
+# Marine Equipment 分类页结构与上述 flat-list 一致：
+#   https://ws15.marinelink.com/news/maritime/marine-equipment
+#
+# 主页"Latest Maritime News"结构：
+#   <ul class="latest-news">
+#     <li class="grayscale">
+#       <a href="/news/[slug]-[id]"><h3>Title</h3></a>
+#     </li>
+#     ...                         ← 11 条最新要闻，无列表页日期
+#   </ul>
+#   item_selector: "ul.latest-news li.grayscale"
+#   link_selector: "a[href]"（item 为 <li>，正常 descendant 查找）
+#   列表页无日期：candidate.publish_date = "" → 回退到今日；
+#   详情页 span.date 提供真实发布日期。
+#
+# 详情页结构：
+#   <article>
+#     <h1>Title</h1>
+#     <p class="meta"><span class="date">April 21, 2026</span></p>
+#     <div class="fr-view" itemprop="text">  ← 正文
+#       <div class="sharethis-inline-share-buttons"></div>
+#       <p>Content...</p>
+#     </div>
+#   </article>
+# ============================================================
+
+source:
+  name: marinelink
+  url: https://ws15.marinelink.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 40
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  # 默认列表页（首页，同时承载 latest_news section）
+  url: https://ws15.marinelink.com/
+  sections:
+    # ── Latest Maritime News 主页最新要闻 ────────────────────────────────────
+    - name: latest_news
+      section_title: "Latest Maritime News"
+      # 使用主页 list_page.url，无需单独 url
+      # <ul class="latest-news"> 内 <li class="grayscale"> 各含一篇文章
+      item_selector: "ul.latest-news li.grayscale"
+      link_selector: "a[href]"
+      title_selector: "h3"
+      # 主页列表无日期显示；候选日期为空时回退为今日，详情页提供真实日期
+      date_selector: "time.nonexistent"
+      tags:
+        - type: section
+          name: latest_news
+
+    # ── Shipbuilding 造船行业新闻 ─────────────────────────────────────────────
+    - name: shipbuilding
+      section_title: "Shipbuilding"
+      url: https://ws15.marinelink.com/news/maritime/shipbuilding
+      item_selector: "div.flat-list a[href^='/news/']"
+      link_selector: "a[href]"
+      title_selector: "h3"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: shipbuilding
+        - type: market
+          name: shipbuilding
+
+    # ── Offshore 近海与海上能源新闻 ──────────────────────────────────────────
+    - name: offshore
+      section_title: "Offshore"
+      url: https://ws15.marinelink.com/news/maritime/offshore
+      # 整个 flat-list 是单一 div，直接子节点 <a> 即为文章条目
+      item_selector: "div.flat-list a[href^='/news/']"
+      # item 本身是 <a>，link_selector 找不到子锚点时自动回退到 item 自身
+      link_selector: "a[href]"
+      title_selector: "h3"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: offshore
+        - type: market
+          name: offshore
+
+    # ── Coastal/Inland 沿海、内河与工作船新闻 ────────────────────────────────
+    - name: coastal_inland
+      section_title: "Coastal/Inland"
+      url: https://ws15.marinelink.com/news/maritime/coastal-inland
+      item_selector: "div.flat-list a[href^='/news/']"
+      link_selector: "a[href]"
+      title_selector: "h3"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: coastal_inland
+        - type: market
+          name: coastal_inland
+
+    # ── Equipment 海事设备与技术新闻 ────────────────────────────────────────
+    - name: equipment
+      section_title: "Equipment"
+      url: https://ws15.marinelink.com/news/maritime/marine-equipment
+      item_selector: "div.flat-list a[href^='/news/']"
+      link_selector: "a[href]"
+      title_selector: "h3"
+      date_selector: ".date"
+      tags:
+        - type: section
+          name: equipment
+        - type: market
+          name: equipment
+
+detail_page:
+  # <h1> 是文章标题的唯一 h1
+  title_selector: "h1"
+  # 正文区域：div.fr-view 包含纯文章段落，排除 header / sidebar
+  content_selector: "div.fr-view"
+  # <span class="date"> 格式："April 21, 2026"（对应 date_format）
+  date_selector: "span.date"
+  remove_selectors:
+    - "script"
+    - "style"
+    # 社交分享按钮（位于 div.fr-view 内顶部）
+    - "div.sharethis-inline-share-buttons"
+    - "[class*='share']"
+
+parse:
+  # 详情页日期格式："April 21, 2026"
+  # 列表页日期 "22 Apr 2026" 由 parse_date_flexible 的 fallback 格式处理
+  date_format: "%B %d, %Y"
+  timezone: UTC
+  max_articles_per_run: 40
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 100
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

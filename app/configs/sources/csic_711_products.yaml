@@ -1,0 +1,141 @@
+# ============================================================
+# csic-711.com — 中国船舶集团第七一一研究所 产品目录
+# http://www.csic-711.com
+#
+# 七一一研究所（SMDERI）隶属于中国船舶集团（CSIC），
+# 是国家级船用柴油机研发机构，主要产品线：
+#   id=18  柴油机/气体机     （CS21/32 中速机、M23G 气体机、A16 发电机组）
+#   id=19  热气机            （50kW 燃气热气机发电机组）
+#   id=20  动力集成系统      （船舶动力集成、减振降噪、SCR、配套件、热交换器）
+#   id=21  船舶自动化        （电气自动化、动力定位、电力推进、工业智能制造）
+#   id=22  节能环保装备      （火炬系统、余热锅炉、加热炉、螺杆机、膨胀机等）
+#   id=23  电站工程          （EPC 总承包电站设计与建设）
+#   id=24  能源服务          （分布式能源、清洁能源方案）
+#
+# 网站结构说明：
+#   - 旧式 PHP CMS（无独立产品详情页）
+#   - 每个产品大类是一个独立页面，页面内用 <div class="mpicmtext"> 列出各产品
+#   - 列表页：/index.php?c=category&id=17（产品与服务总览）
+#       其中 <div class="btnx"> 包含指向各分类页的链接（共 7 个）
+#   - 详情页：各分类页面（id=18..24）
+#       内容区：<div class="right">（右列，仅含产品文字，不含导航侧边栏）
+#       当前分类名：<a class="curr">（左侧导航高亮项）
+#   - 产品页面无发布日期，自动回退到抓取当日
+#
+# 注意：
+#   ① remove_selectors 在 title_selector 之前执行，
+#     因此 <div class="left">（含 a.curr）不可添加到 remove_selectors；
+#     使用 content_selector: "div.right" 自然排除侧边栏即可。
+#   ② 产品目录极少更新，默认跳过常规批量抓取。
+#   ③ 站点为 HTTP（非 HTTPS），无需 legacy_tls_compatibility。
+# ============================================================
+
+source:
+  name: csic_711_products
+  url: http://www.csic-711.com
+  type: html
+  strategy: html
+  status: enable
+  # 产品目录极少更新，手动按需触发
+  skip_in_regular_crawl: true
+
+request:
+  timeout: 20
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+
+list_page:
+  # 产品与服务总览页，其中 <div class="btnx"> 包含 7 个产品分类链接
+  url: http://www.csic-711.com/index.php?c=category&id=17
+  sections:
+    - name: products
+      section_title: "产品与服务"
+      # 每个 <div class="btnx"> 包含一个产品大类链接
+      # 在 id=17 页面共有 7 项，对应 id=18~24
+      item_selector: "div.btnx"
+      link_selector: "a[href]"
+      title_selector: "a[href]"
+      date_selector: null    # 产品目录无日期
+      tags:
+        - type: section
+          name: products
+        - type: content_type
+          name: product
+        - type: company
+          name: 中国船舶集团第七一一研究所
+
+detail_page:
+  # 各产品分类页面结构（以 id=18 为例）：
+  #
+  #   <div id="about_content">
+  #     <div class="list">...</div>       ← 面包屑导航
+  #     <div class="left">               ← 产品分类侧边栏
+  #       <div class="btnn">
+  #         <div class="btn">
+  #           <a class="curr" href="...">柴油机\气体机</a>  ← 当前分类名
+  #         </div>
+  #         ...
+  #       </div>
+  #     </div>
+  #     <div class="right">             ← 主内容区（我们的目标）
+  #       <div class="text">            ← 大类概述段落
+  #         ...
+  #         <div class="mpicmtext">     ← 每个产品的图+文块（多个）
+  #           <strong>中速柴油机</strong>
+  #           ...产品说明...
+  #         </div>
+  #       </div>
+  #     </div>
+  #   </div>
+  #
+  # 注：a.curr 位于 div.left 内，由于 remove_selectors 先执行，
+  #     必须保持 div.left 不被删除，title_selector 才能找到当前分类名。
+  #     使用 content_selector: "div.right" 可确保侧边栏不进入正文内容。
+
+  # 当前分类名（高亮的侧边栏链接）
+  title_selector: "div.btnn a.curr"
+  # 仅提取右侧正文区（自然排除面包屑和侧边栏导航）
+  content_selector: "div.right"
+  # 产品目录无日期，使用不匹配选择器，回退为爬取当日
+  date_selector: "time.product-date"
+  remove_selectors:
+    - "script"
+    - "style"
+    # 产品图片块仅包含图片，无文字价值
+    - ".mpic"
+    # 产品块之间的装饰横线
+    - ".bline"
+
+parse:
+  date_format: "%Y-%m-%d"
+  timezone: Asia/Shanghai
+  # 7 个产品大类，每类一篇
+  max_articles_per_run: 10
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 100    # 各产品分类页均有数百字以上内容
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - company
+    - engine_maker
+    - fuel_type
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

@@ -1,0 +1,136 @@
+source:
+  name: splash247
+  url: https://splash247.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 25
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+    Referer: https://splash247.com/
+
+# ─── Splash247 DOM 结构与 JS 渲染说明（诊断已验证，2026-04-21）──────────────
+#
+# ⚠️ 分类归档页（/category/splashtech/ 等）文章列表由 JavaScript 动态加载。
+#    httpx 获取的初始 HTML 中完全没有文章卡片元素，实测结果：
+#      li.post-item = 0,  article.post = 0,  article = 0
+#    因此分类页无法用本 HTMLConnector 抓取。
+#
+# ✓ 主页（https://splash247.com/）是静态 HTML，可以正常抓取：
+#    文章卡片：<li class="post-item">
+#    标题链接：<a class="post-title the-subtitle" href="...">
+#    日期：    <span class="post-meta"><span class="date">April 21, 2026</span></span>
+#
+# 各分类的替代方案（RSS Feed，httpx 可直接解析）：
+#   SplashTech  → splash247_splashtech.yaml（已配置，strategy: rss）
+#   Offshore    → https://splash247.com/category/sector/offshore/feed/
+#   Renewables  → https://splash247.com/category/sector/renewables/feed/
+#   Features    → https://splash247.com/category/contributions/feed/
+# ─────────────────────────────────────────────────────────────────────────────
+
+list_page:
+  url: https://splash247.com/
+
+  sections:
+
+    # # ── 1. 主页最新新闻 ────────────────────────────────────────────────────────
+    # # 来源：https://splash247.com/（主页）
+    # # 使用主题自定义 li.post-item 结构
+    - name: homepage_latest
+      section_title: "Homepage Latest News"
+      item_selector: "li.post-item"
+      link_selector: "h2.post-title a[href]"
+      title_selector: "h2.post-title a[href]"
+      date_selector: ".post-meta .date"
+      tags:
+        - type: section
+          name: homepage_latest
+
+    # ── 2. SplashTech Latest ───────────────────────────────────────────────────
+    # 见splash247_rss.yaml
+
+    # ── 3. Offshore ────────────────────────────────────────────────────────────
+    # 见splash247_rss.yaml
+
+    # ── 4. Renewables ──────────────────────────────────────────────────────────
+    # 见splash247_rss.yaml
+
+    # ── 5. Features（即 Contributions 分类）──────────────────────────────────
+    # 见splash247_rss.yaml
+
+detail_page:
+  # 文章详情页标题：大概率是 h1 配合 post-title 或 the-subtitle 类名
+  title_selector: "h1.post-title, h1.the-subtitle, h1.entry-title, h1"
+  # 正文区：Splash247 沿用 WordPress 标准 .entry-content
+  content_selector: ".entry-content, .post-content"
+  # 日期：单文章页有专属 .single-post-meta 区域
+  date_selector: ".single-post-meta .date, .entry-meta time, time[datetime]"
+  remove_selectors:
+    # 邮件订阅弹窗（MailMunch 插件）
+    - ".mailmunch-forms-before-post"
+    - ".mailmunch-forms-in-post-middle"
+    - ".mailmunch-forms-after-post"
+    # 相关文章推荐块
+    - ".related-posts"
+    - ".yarpp-related"
+    # 社交分享
+    - ".social-share"
+    - ".sharedaddy"
+    - ".sd-block"
+    # 文章底部 meta 区域
+    - ".post-tags"
+    - ".entry-footer"
+    - ".author-bio"
+    # 评论区
+    - "#comments"
+    - ".comment-respond"
+    # 上下篇导航
+    - ".post-navigation"
+    - ".nav-links"
+    # 广告
+    - ".advertisement"
+    - ".ad-unit"
+    - "script"
+    - "style"
+    - "noscript"
+
+parse:
+  # 文章日期格式示例："April 21, 2026"
+  date_format: "%B %d, %Y"
+  timezone: UTC
+  max_articles_per_run: 50
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 0
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

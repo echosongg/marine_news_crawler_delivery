@@ -1,0 +1,111 @@
+# ============================================================
+# everllence.com (前身: MAN Energy Solutions) — 企业新闻
+# https://www.man-es.com/ → 跳转至 https://www.everllence.com/
+#
+# 抓取目标：
+#   Press Releases 页 (https://www.everllence.com/company/press-releases)
+#   每张新闻卡片 div.evl-news-card 包含标题、日期和详情链接
+#
+# 页面结构（SSR 渲染，无需 JS）：
+#   列表页卡片：  div.evl-news-card
+#     链接：      a[href*='/company/press-releases/details/']
+#     标题：      div.card-title
+#     日期：      time[datetime]  (ISO 8601 属性)
+#   详情页：
+#     标题：      h1
+#     日期：      time[datetime]
+#     正文：      .news-content
+#
+# 注意：旧版 MAN Energy Solutions 的历史新闻仍保留在
+#       https://www.man-es.com/company/press-releases
+#       如需历史归档可另建 source 单独抓取。
+# ============================================================
+
+source:
+  name: everllence
+  url: https://www.everllence.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 20
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    Accept-Language: "en-US,en;q=0.9"
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+
+list_page:
+  url: https://www.everllence.com/company/press-releases
+  sections:
+    # ── 企业新闻 / Press Releases ──────────────────────────────────────────────
+    # 列表页最多显示 8 条最新新闻；通过时间窗口过滤获取所需范围
+    - name: press_releases
+      section_title: "Everllence Press Releases"
+      url: https://www.everllence.com/company/press-releases
+      item_selector: "div.evl-news-card"
+      link_selector: "a[href*='/company/press-releases/details/']"
+      title_selector: "div.card-title"
+      # time 元素带有机器可读的 datetime ISO 属性，解析精度最高
+      date_selector: "time"
+      tags:
+        - type: section
+          name: press_releases
+        - type: company
+          name: everllence
+        - type: topic
+          name: marine_engine
+        - type: language
+          name: en
+
+detail_page:
+  title_selector: "h1"
+  # time[datetime] 属性值为 ISO 8601，date_format 用 ISO 格式匹配
+  date_selector: "time"
+  content_selector: ".news-content"
+  remove_selectors:
+    - "nav"
+    - "header"
+    - "footer"
+    - ".evl-breadcrumb"
+    - ".evl-navigation"
+    - ".evl-footer"
+    - ".media-library"
+    - ".press-contacts"
+    - "script"
+    - "style"
+
+parse:
+  # 列表页 time 元素文本格式：Tuesday, April 21, 2026
+  # time[datetime] 属性格式：2026-04-21T08:50:36.0000000Z（ISO，自动识别）
+  date_format: "%A, %B %d, %Y"
+  timezone: Europe/Berlin
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 100
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - company
+    - vessel_type
+    - fuel_type
+    - technology
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

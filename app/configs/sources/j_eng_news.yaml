@@ -1,0 +1,83 @@
+# Japan Engine Corporation news. Some releases are direct PDFs; HTMLConnector
+# routes PDF links through the shared PDF parser.
+source:
+  name: j_eng_news
+  url: https://www.j-eng.co.jp
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 25
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9,ja;q=0.8
+
+list_page:
+  url: https://www.j-eng.co.jp/en/news/index.html
+  sections:
+    - name: current_year
+      section_title: "J-ENG News"
+      item_selector: "#contents a[href*='/en/news/'], main a[href*='/en/news/']"
+      link_selector: "a[href]"
+      tags:
+        - type: section
+          name: current_year
+        - type: company
+          name: japan_engine_corporation
+        - type: engine_maker
+          name: j_eng
+        - type: language
+          name: en
+
+detail_page:
+  title_selector: "h1"
+  content_selector: "main, .article, [class*='article']"
+  date_selector: "main time, time, .meta"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - ".breadcrumb"
+    - ".sns"
+    - ".print"
+
+parse:
+  date_format: "%Y.%m.%d"
+  timezone: Asia/Tokyo
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 50
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+    - language
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

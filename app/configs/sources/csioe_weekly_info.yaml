@@ -1,0 +1,76 @@
+source:
+  name: csioe_weekly_info
+  url: https://csioe.sjtu.edu.cn
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 60
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept-Language: zh-CN,zh;q=0.9,en;q=0.8
+
+list_page:
+  url: https://csioe.sjtu.edu.cn/Web/Down/9
+  sections:
+    - name: weekly_ocean_info
+      section_title: "一周海洋信息（PDF）"
+      url: https://csioe.sjtu.edu.cn/Web/Down/9
+      item_selector: "div.newsList ul.clearfix > li"
+      link_selector: "a.pd[href*='/Upload/Files/']"
+      title_selector: "a.pd .text .h3"
+      date_selector: "a.pd .text .h3 .h3"
+      tags:
+        - type: section
+          name: weekly_ocean_info
+        - type: company
+          name: csioe
+
+detail_page:
+  # 目标链接为 PDF，connector 会自动走 PDF 文本提取
+  title_selector: "h1, h2, .h3"
+  content_selector: "article, .content, .pMainCon, body"
+  date_selector: "time.nonexistent"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+
+parse:
+  date_format: "%Y-%m-%d"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 50
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

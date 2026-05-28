@@ -1,0 +1,117 @@
+# ============================================================
+# jstra.jp — 海外情報報告書（年度別、PDF 全文抽出）
+# https://www.jstra.jp/a3b06/cat96/
+#
+# 構造：
+#   リストページ（/a3b06/cat96/）のテーブルに各 PDF へのリンクあり
+#   各セクションで年度別ページ（/a3b06/cat96/2024/ 等）を指定し、
+#   テーブル行ごとに PDF リンクを candidate として取得する。
+#   connector が PDF URL を検知 → バイナリ DL → pdfplumber でテキスト抽出。
+#
+# 制限：スキャン画像のみの PDF（テキストレイヤーなし）は抽出不可。
+#       抽出不可の場合は当該 PDF がエラーとしてスキップされる。
+#
+# 更新頻度：年 1 回程度。手動または低頻度スケジューリング推奨。
+# ============================================================
+
+source:
+  name: jstra_annual_reports
+  url: https://www.jstra.jp
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 60    # PDF ダウンロードは時間がかかるため長めに設定
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    Accept-Language: "ja,en;q=0.9"
+
+list_page:
+  url: https://www.jstra.jp/a3b06/cat96/
+  sections:
+    # ── 2024年度 ─────────────────────────────────────────────────────────────
+    # テーブル行（<tr>）から PDF リンク（<a href="/PDF/reportX_2024.pdf">）を抽出
+    - name: reports_2024
+      section_title: "2024年度 海外情報報告書"
+      url: https://www.jstra.jp/a3b06/cat96/2024/
+      item_selector: "table tr"
+      link_selector: "a[href*='/PDF/']"
+      title_selector: "a[href*='/PDF/']"
+      date_selector: null    # 発行日なし → connector が当日日付にフォールバック
+      tags:
+        - type: section
+          name: annual_reports
+        - type: content_type
+          name: research_report
+        - type: fiscal_year
+          name: "2024"
+        - type: language
+          name: ja
+
+    # ── 2023年度 ─────────────────────────────────────────────────────────────
+    - name: reports_2023
+      section_title: "2023年度 海外情報報告書"
+      url: https://www.jstra.jp/a3b06/cat96/2023/
+      item_selector: "table tr"
+      link_selector: "a[href*='/PDF/']"
+      title_selector: "a[href*='/PDF/']"
+      date_selector: null
+      tags:
+        - type: section
+          name: annual_reports
+        - type: content_type
+          name: research_report
+        - type: fiscal_year
+          name: "2023"
+        - type: language
+          name: ja
+
+detail_page:
+  # PDF ファイルの場合、connector が自動で PDF パスに切り替える。
+  # これらの selector は HTML ページにフォールバックした場合のみ使用される。
+  title_selector: "h2.main-header, h2, h1"
+  content_selector: ".entry_wrap"
+  date_selector: ".entry_wrap .news_date"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - ".side_nav_wrap"
+    - ".breadcrumb"
+
+parse:
+  date_format: "%Y/%m/%d"
+  timezone: Asia/Tokyo
+  max_articles_per_run: 30
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 50
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipyard
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

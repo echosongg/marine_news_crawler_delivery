@@ -1,0 +1,112 @@
+source:
+  name: drewry_news
+  url: https://www.drewry.co.uk
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 60
+  # Drewry 对程序化请求有严格限流，优先使用浏览器抓取
+  use_playwright: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: en-GB,en;q=0.9
+    Cache-Control: no-cache
+    Pragma: no-cache
+    Upgrade-Insecure-Requests: "1"
+    Sec-Fetch-Site: same-origin
+    Sec-Fetch-Mode: navigate
+    Sec-Fetch-Dest: document
+    Referer: https://www.drewry.co.uk/
+
+list_page:
+  url: https://www.drewry.co.uk/
+  sections:
+    - name: latest_news
+      section_title: "Drewry News"
+      url: https://www.drewry.co.uk/
+      # Drewry 的新闻在首页经常是链接块，不一定有稳定 article/card 容器。
+      item_selector: "a[href*='/news/']"
+      link_selector: "a[href]"
+      title_selector: null
+      date_selector: null
+      tags:
+        - type: section
+          name: latest_news
+        - type: company
+          name: drewry
+
+    # - name: latest_market_opinion
+    #   section_title: "Latest Market Opinion"
+    #   url: https://www.drewry.co.uk/
+    #   item_selector: "a[href*='/maritime-research-opinion-browser/']"
+    #   link_selector: "a[href]"
+    #   title_selector: null
+    #   date_selector: null
+    #   tags:
+    #     - type: section
+    #       name: latest_market_opinion
+    #     - type: company
+    #       name: drewry
+
+detail_page:
+  # Drewry 新闻详情页正文分散在 .ao-Article 的多个直接子块里。
+  # 需要抓整块文章容器，再通过 remove_selectors 去掉标题、日期和分享区。
+  title_selector: "#dwNewsArtPCnew h1.aos-ArticleTitle, #dwNewsArtPCnew h1"
+  content_selector: "#dwNewsArtPCnew .ao-Article"
+  date_selector: "#dwNewsArtPCnew .aos-DS30-N, #dwNewsArtPCnew time"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - "#dwNewsArtPCnew h1.aos-ArticleTitle"
+    - "#dwNewsArtPCnew .aos-DS30-N"
+    - "#dwNewsArtPCnew .ao-TableCell"
+    - "#dwNewsArtPCnew .aos-ShareLinks"
+    - ".share"
+    - ".social"
+    - ".breadcrumbs"
+    - ".cookie-banner"
+    - ".cookie-consent"
+    - ".modal"
+
+parse:
+  # Drewry 详情常见日期：31 Mar 2026 / 01 Apr 2026
+  date_format: "%d %b %Y"
+  timezone: Europe/London
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

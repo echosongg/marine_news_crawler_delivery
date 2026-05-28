@@ -1,0 +1,356 @@
+# ============================================================
+# yuchaiglobal.com — Yuchai Product Catalog
+# https://www.yuchaiglobal.com/products/
+#
+# 注意：www.yuchai.com（中文主站）的产品页面全部由 JavaScript 渲染，
+#       无法直接抓取产品规格。本配置改用玉柴国际站（yuchaiglobal.com），
+#       该站使用 WooCommerce 构建，产品详情以静态 HTML 提供，涵盖：
+#       - 产品简介（功率范围、应用领域）
+#       - 产品特点（技术优势列表）
+#       - 技术参数表（排量、缸径、功率、扭矩、排放标准等）
+#
+# 产品目录几乎不更新，建议手动运行，默认跳过常规批量抓取。
+# 按产品大类分 section，各 section 使用相同选择器，仅 URL/标签不同。
+# 每 section 设 limit=20，确保单次不过载。
+# ============================================================
+
+source:
+  name: yuchai_products
+  url: https://www.yuchaiglobal.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 30
+  # yuchaiglobal.com 使用旧式 TLS 握手，需关闭严格 SSL 验证
+  legacy_tls_compatibility: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  # ─── 公共选择器说明 ────────────────────────────────────────────
+  # 分类页（/product-category/…）使用 Elementor Loop 模板，结构如下：
+  #   <div class="e-loop-item e-loop-item-XXXX post-XXXX product ...">
+  #     <h2 class="product_title entry-title elementor-heading-title">
+  #       <a href="/product/yc6mk-2/">YC6MK</a>
+  #     </h2>
+  #     <div class="elementor-button-wrapper">
+  #       <a href="/product/yc6mk-2/">More Detail</a>
+  #     </div>
+  #   </div>
+  # 注意：全量列表页（/products/）使用 li.product 结构，但分类页不同；
+  #       统一使用 e-loop-item 选择器覆盖所有分类页。
+  # ──────────────────────────────────────────────────────────────
+  url: https://www.yuchaiglobal.com/products/
+  sections:
+    # ── 1. 卡车发动机 ──────────────────────────────────────────
+    - name: truck_engines
+      section_title: "Truck Engines"
+      url: "https://www.yuchaiglobal.com/product-category/engine/truck-engine/"
+      # Elementor Loop 模板：每张产品卡片是 div.e-loop-item
+      item_selector: "div.e-loop-item"
+      # 产品标题链接在 h2.product_title > a
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null          # 产品目录无发布日期，回退到抓取当日
+      tags:
+        - type: section
+          name: truck_engines
+        - type: content_type
+          name: product
+        - type: product_category
+          name: engine
+
+    # ── 2. 客车发动机 ──────────────────────────────────────────
+    - name: bus_engines
+      section_title: "Bus Engines"
+      url: "https://www.yuchaiglobal.com/product-category/engine/bus-engine/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: bus_engines
+        - type: content_type
+          name: product
+        - type: product_category
+          name: engine
+
+    # ── 3. 工程机械发动机 ──────────────────────────────────────
+    - name: engineering_machinery_engines
+      section_title: "Engineering Machinery Engines"
+      url: "https://www.yuchaiglobal.com/product-category/engine/engineering-machinery-engine/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: engineering_machinery_engines
+        - type: content_type
+          name: product
+        - type: product_category
+          name: engine
+
+    # ── 4. 农业机械发动机 ──────────────────────────────────────
+    - name: agricultural_machinery_engines
+      section_title: "Agricultural Machinery Engines"
+      url: "https://www.yuchaiglobal.com/product-category/engine/agricultural-machinery-engine/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: agricultural_machinery_engines
+        - type: content_type
+          name: product
+        - type: product_category
+          name: engine
+
+    # ── 5. 船用发动机 ──────────────────────────────────────────
+    - name: marine_engines
+      section_title: "Marine Engines"
+      url: "https://www.yuchaiglobal.com/product-category/engine/marine-engine/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: marine_engines
+        - type: content_type
+          name: product
+        - type: product_category
+          name: marine_engine
+
+    # ── 6. 发电用发动机（G-drive） ─────────────────────────────
+    - name: gdrive_engines
+      section_title: "G-Drive Engines"
+      url: "https://www.yuchaiglobal.com/product-category/engine/g-drive-engine/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: gdrive_engines
+        - type: content_type
+          name: product
+        - type: product_category
+          name: engine
+
+    # ── 7. 柴油发电机组 ────────────────────────────────────────
+    - name: diesel_gensets
+      section_title: "Diesel Power Gensets"
+      url: "https://www.yuchaiglobal.com/product-category/genset/diesel-power-genset/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: diesel_gensets
+        - type: content_type
+          name: product
+        - type: product_category
+          name: genset
+
+    # ── 8. 燃气发电机组 ────────────────────────────────────────
+    - name: gas_gensets
+      section_title: "Gas Power Gensets"
+      url: "https://www.yuchaiglobal.com/product-category/genset/gas-power-genset/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: gas_gensets
+        - type: content_type
+          name: product
+        - type: product_category
+          name: genset
+
+    # ── 9. 小型家用发电机组 ────────────────────────────────────
+    - name: small_household_gensets
+      section_title: "Small Household Gensets"
+      url: "https://www.yuchaiglobal.com/product-category/genset/small-household-genset/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: small_household_gensets
+        - type: content_type
+          name: product
+        - type: product_category
+          name: genset
+
+    # ── 10. 新能源产品 ─────────────────────────────────────────
+    - name: new_energy
+      section_title: "New Energy Products"
+      url: "https://www.yuchaiglobal.com/product-category/new-energy/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: new_energy
+        - type: content_type
+          name: product
+        - type: product_category
+          name: new_energy
+
+    # ── 11. 挖掘机 ─────────────────────────────────────────────
+    - name: excavators
+      section_title: "Excavators"
+      url: "https://www.yuchaiglobal.com/product-category/construction-machinery/excavator/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: excavators
+        - type: content_type
+          name: product
+        - type: product_category
+          name: construction_machinery
+
+    # ── 12. 林业设备 ───────────────────────────────────────────
+    - name: forest_equipment
+      section_title: "Forest Equipment"
+      url: "https://www.yuchaiglobal.com/product-category/construction-machinery/forest-equipment/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: forest_equipment
+        - type: content_type
+          name: product
+        - type: product_category
+          name: construction_machinery
+
+    # ── 13. 旋挖钻机 ───────────────────────────────────────────
+    - name: rotary_drilling_rigs
+      section_title: "Rotary Drilling Rig"
+      url: "https://www.yuchaiglobal.com/product-category/construction-machinery/rotary-drilling-rig/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: rotary_drilling_rigs
+        - type: content_type
+          name: product
+        - type: product_category
+          name: construction_machinery
+
+    # ── 14. 电动设备 ───────────────────────────────────────────
+    - name: electric_equipment
+      section_title: "Electric Equipment"
+      url: "https://www.yuchaiglobal.com/product-category/construction-machinery/electri-equipment/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: electric_equipment
+        - type: content_type
+          name: product
+        - type: product_category
+          name: construction_machinery
+
+    # ── 15. 细分市场产品 ───────────────────────────────────────
+    - name: niche_market_products
+      section_title: "Niche Market Products"
+      url: "https://www.yuchaiglobal.com/product-category/construction-machinery/niche-market-products/"
+      item_selector: "div.e-loop-item"
+      link_selector: "h2.product_title a"
+      title_selector: "h2.product_title"
+      date_selector: null
+      tags:
+        - type: section
+          name: niche_market_products
+        - type: content_type
+          name: product
+        - type: product_category
+          name: construction_machinery
+
+detail_page:
+  # ─── 详情页结构（Elementor + WooCommerce 混合渲染） ──────────
+  # <h1>YC6MK</h1>
+  # <div class="woocommerce-product-details__short-description">
+  #   Power range: 300-420 hp  Applications: ...
+  # </div>
+  # Elementor widget containers 包含：
+  #   - Product Feature（编号列表：1.技术领先性 2.广泛应用...）
+  #   - Product Parameters（规格参数表：排量/缸径/功率/扭矩/排放等）
+  #   - 图标块：STRONG POWER / FUEL ECONOMY / RELIABILITY / COMFORT
+  # ──────────────────────────────────────────────────────────────
+  title_selector: "h1"
+  # 以完整产品 div 作为内容来源，再通过 remove_selectors 去除噪音
+  content_selector: "div.product.type-product"
+  # 产品页无发布日期，使用不存在的选择器让 connector 回退到今日日期
+  date_selector: "time.product-publish-date"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "header"
+    - "footer"
+    - "nav"
+    # WooCommerce/Elementor 页面噪音
+    - ".elementor-widget-woocommerce-breadcrumb"   # 面包屑：HOME / Engine / ... / YC6MK
+    - ".elementor-widget-button"                   # "Get Quote >" 按钮
+    - ".elementor-widget-image"                    # 产品图片
+    - ".elementor-widget-search"                   # 搜索框
+    - ".elementor-widget-nav-menu"                 # 顶部导航菜单
+    - ".elementor-widget-html"                     # 嵌入 JS 小部件
+    - "form"                                       # 询价表单
+    - ".quantity"                                  # 数量选择器
+    - ".contact-form"                              # 联系表单
+    - ".elementor-widget-shortcode"                # WP shortcode 区块
+
+parse:
+  # 产品页无日期，date_selector 返回空后 connector 自动使用今日日期
+  date_format: "%Y-%m-%d"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 300    # 15 sections × 20 items，全量扫描上限
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 50       # 过滤掉无内容的占位条目
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - company
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

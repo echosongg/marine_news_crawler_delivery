@@ -1,0 +1,51 @@
+top_level_fields:
+  - success
+  - message
+  - crawl_session
+  - crawl_errors
+  - results
+
+crawl_session_fields:
+  - id
+  - started_at
+  - ended_at
+  - status
+  - total_sites
+  - success_count
+  - fail_count
+  - error_message
+
+crawl_error_fields:
+  - id
+  - session_id
+  - site_name
+  - section_name
+  - url
+  - error_type
+  - error_message
+  - stage
+  - selector
+  - status_code
+  - raw_date
+  - suggestion
+  - severity
+  - created_at
+
+result_item_fields:
+  - datasource
+  - articles
+
+response_defaults:
+  success: true
+  message: batch crawl completed
+  crawl_session:
+    id: null
+    started_at: ""
+    ended_at: ""
+    status: success
+    total_sites: 0
+    success_count: 0
+    fail_count: 0
+    error_message: null
+  crawl_errors: []
+  results: []

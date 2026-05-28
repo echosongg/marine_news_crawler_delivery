@@ -1,0 +1,161 @@
+# ============================================================
+# seatrade-maritime.com — Containers & Strait of Hormuz 专项分类
+# https://www.seatrade-maritime.com
+#
+# 本配置针对 seatrade-maritime.com 的两个专项分类页面进行抓取：
+#   - containers        集装箱航运新闻
+#   - strait_of_hormuz  霍尔木兹海峡危机追踪
+#
+# 综合最新要闻（Latest News）见 seatrade.yaml。
+#
+# 反爬说明：
+#   Seatrade HTML 页面受 Cloudflare 保护。
+#   经实测，使用 Playwright 无头浏览器（use_playwright: true）可正常访问。
+#
+# 正确的分类页面 URL（由 Playwright 探测确认）：
+#   /containers            → 重定向至 /maritime-transportation/containers
+#   /topics/strait-of-hormuz → 重定向至 /program/strait-of-hormuz
+#
+# 页面列表结构（React/Next.js + Contentstack CMS）：
+#   文章卡片使用 VerticalCard 组件，每篇文章生成两个标题链接（桌面/移动）：
+#   <div class="VerticalCard">
+#     <div class="VerticalCard-Body">
+#       <a class="VerticalCard-Title VerticalCard-Title_displayOption_default"
+#          data-testid="preview-default-title"
+#          href="/{section}/{slug}">
+#         Article Title
+#       </a>
+#       <a class="VerticalCard-Title VerticalCard-Title_displayOption_mobile" ...>
+#         Article Title (重复，仅移动端显示)
+#       </a>
+#       <div class="...Date...">Apr 22, 2026</div>
+#     </div>
+#   </div>
+#
+#   item_selector : "main .VerticalCard"
+#     — 用 main 作用域排除导航栏中同样使用 VerticalCard 的"各栏目最新"菜单卡片
+#   link_selector : "a[data-testid='preview-default-title']"
+#     — data-testid 属性仅出现在真正的文章标题链接上，且每篇文章仅选桌面版
+#   title_selector: "a[data-testid='preview-default-title']"
+#   date_selector : "[class*='VerticalCard-Date'], [class*='Date']"
+#
+# 详情页结构：
+#   <h1>Article Title</h1>
+#   <span class="...Date...">Apr 22, 2026</span>
+#   <div class="...ArticleBody...">
+#     Partial content (paywall after ~2 paragraphs)
+#   </div>
+# ============================================================
+
+source:
+  name: seatrade_sections
+  url: https://www.seatrade-maritime.com
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 45
+  use_playwright: true
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Accept: text/html,application/xhtml+xml,*/*;q=0.8
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  url: https://www.seatrade-maritime.com/
+  sections:
+    # ── Containers 集装箱航运新闻 ─────────────────────────────────────────────
+    # 页面标题："Container Shipping News | Seatrade Maritime News"
+    # URL 实际落地：/maritime-transportation/containers
+    - name: containers
+      section_title: "Containers"
+      url: https://www.seatrade-maritime.com/maritime-transportation/containers
+      item_selector: "main .VerticalCard"
+      link_selector: "a[data-testid='preview-default-title']"
+      title_selector: "a[data-testid='preview-default-title']"
+      # Prefer VerticalCard-Date so select_one does not grab another [class*='Date']
+      # node inside the same card (avoids wrong list dates → time-window drops).
+      date_selector: "[class*='VerticalCard-Date'], [class*='Date']"
+      tags:
+        - type: section
+          name: containers
+        - type: term
+          name: containers
+
+    # ── Strait of Hormuz 霍尔木兹海峡危机 ────────────────────────────────────
+    # 页面标题："Strait of Hormuz Crisis | Seatrade Maritime News"
+    # URL 实际落地：/program/strait-of-hormuz
+    # 包含来自多个板块（security, containers, tankers 等）的霍尔木兹相关报道
+    - name: strait_of_hormuz
+      section_title: "Strait of Hormuz"
+      url: https://www.seatrade-maritime.com/program/strait-of-hormuz
+      item_selector: "main .VerticalCard"
+      link_selector: "a[data-testid='preview-default-title']"
+      title_selector: "a[data-testid='preview-default-title']"
+      date_selector: "[class*='VerticalCard-Date'], [class*='Date']"
+      tags:
+        - type: section
+          name: strait_of_hormuz
+        - type: term
+          name: strait_of_hormuz
+
+detail_page:
+  title_selector: "h1"
+  # Keep extraction inside the article body only. ArticleBase-Body also wraps
+  # author bios, newsletter prompts, and recommendation blocks.
+  content_selector: ".ArticleBase-BodyContent, [class*='ArticleBase-BodyContent']"
+  # Scope to main so the first [class*='Date'] is not from nav/footer/related rail.
+  date_selector: "main [class*='Date']"
+  remove_selectors:
+    - "script"
+    - "style"
+    - "nav"
+    - "header"
+    - "footer"
+    - ".ad"
+    - ".ad-container"
+    - "[class*='advert']"
+    - "[class*='sponsor']"
+    - "[class*='subscribe']"
+    - "[class*='paywall']"
+    - "[class*='related']"
+    - ".RelatedArticle"
+    - "[class*='RelatedArticle']"
+    - ".ArticleBase-ContributorsWrapper"
+    - "[class*='ContributorsWrapper']"
+    - "[class*='SocialShare']"
+
+parse:
+  date_format: "%B %d, %Y"
+  timezone: UTC
+  max_articles_per_run: 20
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 30
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

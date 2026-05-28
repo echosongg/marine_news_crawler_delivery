@@ -1,0 +1,68 @@
+source:
+  name: jstra
+  url: https://www.jstra.jp
+  type: html
+  strategy: html
+  status: enable
+
+request:
+  timeout: 20
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+    Accept-Language: en-US,en;q=0.9
+
+list_page:
+  url: https://www.jstra.jp/
+  sections:
+    - name: whats_new
+      section_title: "What's New"
+      item_selector: "section.news_wrap ul > li"
+      link_selector: "a[href]"
+      title_selector: "a[href]"
+      date_selector: "span"
+
+detail_page:
+  title_selector: ".entry_wrap > h3"
+  content_selector: ".entry_wrap > section"
+  date_selector: ".entry_wrap .news_date"
+  remove_selectors:
+    - ".breadcrumb"
+    - ".side_nav_wrap"
+    - "script"
+    - "style"
+
+parse:
+  date_format: "%Y/%m/%d"
+  timezone: Asia/Tokyo
+  max_articles_per_run: 5
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - engine_maker
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10

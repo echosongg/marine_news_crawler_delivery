@@ -1,0 +1,148 @@
+# ============================================================
+# eworldship.com — 国际船舶网
+# 中国权威航运/造船综合信息平台，GBK 编码，旧版 TLS
+# ============================================================
+#
+# 站点特点：
+#   - HTTPS 使用 Diffie-Hellman 弱密钥（DH_KEY_TOO_SMALL），
+#     需要 legacy_tls_compatibility: true（启用 urllib + SECLEVEL=1）
+#   - 页面编码为 GBK；HTMLConnector 自动识别 charset 并解码
+#   - 主页通过 tabPanel0 / tabPanel1 / tabPanel2 展示分类新闻
+#   - 列表页 li 中无日期，日期只在详情页 .p_time .ss01 里
+#
+# Sections：
+#   1.综合新闻   (#tabPanel0) — 订单、造船、装备等综合最新资讯
+#   2. 船市       (#tabPanel1) — 租船市场、运费、船东动态
+#   3. 国际纵览   (#tabPanel2) — 国际航运政策、综合动态
+# ============================================================
+
+source:
+  name: eworldship
+  url: https://www.eworldship.com
+  type: news
+  strategy: html
+  status: enable
+
+request:
+  timeout: 25
+  legacy_tls_compatibility: true   # 站点 DH 密钥过小，必须启用
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    Accept-Language: "zh-CN,zh;q=0.9,en;q=0.8"
+    Referer: "https://www.eworldship.com/"
+
+list_page:
+  url: https://www.eworldship.com/index.html
+  sections:
+    # ── 1. 综合新闻（今日要闻·综合 tab）──────────────────────────────────
+    # #tabPanel0 是首页"今日要闻"选项卡的第一个面板（综合），
+    # 包含订单、造船、国外造船、装备制造等混合最新资讯
+    - name: general_news
+      section_title: "综合新闻"
+      item_selector: "#tabPanel0 div.news-hot li"
+      link_selector: "h5 a[href]"
+      title_selector: "h5 a[href]"
+      # 列表页无日期，依赖详情页 .p_time .ss01 提供
+      date_selector: null
+      tags:
+        - type: source_section
+          name: general_news
+        - type: region
+          name: China
+        - type: language
+          name: zh
+
+    # ── 2. 船市动态（#tabPanel1）──────────────────────────────────────────
+    # 涵盖租船市场、运费行情、船东动态等
+    - name: ship_market
+      section_title: "船市动态"
+      item_selector: "#tabPanel1 div.news-hot li"
+      link_selector: "h5 a[href]"
+      title_selector: "h5 a[href]"
+      date_selector: null
+      tags:
+        - type: source_section
+          name: ship_market
+        - type: region
+          name: China
+        - type: language
+          name: zh
+
+    # ── 3. 国际纵览（#tabPanel2）──────────────────────────────────────────
+    # 国际航运政策、综合动态、事故、人物等
+    - name: international
+      section_title: "国际纵览"
+      item_selector: "#tabPanel2 div.news-hot li"
+      link_selector: "h5 a[href]"
+      title_selector: "h5 a[href]"
+      date_selector: null
+      tags:
+        - type: source_section
+          name: international
+        - type: region
+          name: Global
+        - type: language
+          name: zh
+
+detail_page:
+  # 详情页结构（以 #nArticle 为主容器）：
+  #   <div id="nArticle">
+  #     <h1>标题</h1>
+  #     <div id="artical_sth">
+  #       <p class="p_time"><span class="ss01">2026-04-21 11:18:17</span>...</p>
+  #       <div class="share">...</div>
+  #     </div>
+  #     <!-- 正文段落 -->
+  #   </div>
+  title_selector: "#nArticle h1"
+  content_selector: "#nArticle"
+  date_selector: ".p_time .ss01"
+  remove_selectors:
+    # 注意：不删除 #artical_sth，因为日期 .p_time .ss01 在其中；
+    # connector 先删 remove_selectors，再提取日期，所以父元素不能先删。
+    - ".crumbs"          # 面包屑导航
+    - "h1"               # 标题已单独提取，避免重复出现在正文里
+    - ".share"           # 分享按钮（在 #artical_sth 内，删掉具体元素即可）
+    - "a.pinglun"        # "我有话要说"评论入口链接
+    - ".bk3"             # 广告 banner
+    - ".shop_guide"      # 底部导航栏
+    - "script"
+    - "style"
+    - ".related-news"    # 相关推荐
+    - "#comment_iframe"  # 评论框
+
+parse:
+  # 详情页日期格式：2026-04-21 11:18:17
+  date_format: "%Y-%m-%d %H:%M:%S"
+  timezone: Asia/Shanghai
+  max_articles_per_run: 35
+
+cleaning:
+  strip_html: true
+  remove_blank_lines: true
+  normalize_whitespace: true
+  min_content_length: 80
+
+tagging:
+  enable_rule_tagger: true
+  enable_llm_tagger: false
+  allowed_tag_types:
+    - country
+    - company
+    - shipowner
+    - shipyard
+    - vessel_type
+    - fuel_type
+    - regulator
+    - term
+
+summary:
+  enable: true
+  mode: rule
+
+llm:
+  provider: mock
+  model: mock-llm
+  base_url: http://mock-llm.local
+  api_key_env: MOCK_LLM_API_KEY
+  timeout: 10
