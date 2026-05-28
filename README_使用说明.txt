@@ -58,9 +58,11 @@ GitHub 仓库与下载
 ────────────────────────────────────────────────────────────
 本目录对应 GitHub 仓库 marine_news_crawler_delivery（方案 A）：
 
+  仓库地址：  https://github.com/echosongg/marine_news_crawler_delivery
   源码开发：  marine_news_crawler（Python 源码，单独仓库）
   交付配置：  本仓库 git 跟踪 README、run.bat、app\configs、.cursor\skills
-  完整运行包：GitHub Releases 下载 zip（含 exe 与 _internal，约 200 MB）
+  完整运行包：GitHub Releases 下载 zip（含 exe 与 _internal，约 88 MB）
+  最新下载：  https://github.com/echosongg/marine_news_crawler_delivery/releases/download/v1.0.0/marine_news_crawler_delivery-v1.0.0.zip
 
 首次使用（从 GitHub 下载）：
   1. 打开仓库 Releases 页面，下载最新 marine_news_crawler_delivery-vX.X.X.zip
